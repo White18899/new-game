@@ -141,7 +141,9 @@ function broadcastState(room) {
         cardCount: p.cards.length,
         socketId: p.socketId,
         unoDeclared: p.unoDeclared,
-        online: p.online !== false
+        online: p.online !== false,
+        hasWon: p.hasWon || false,
+        rank: p.rank || 0
       })),
       status: room.status,
       discardPile: room.discardPile,
@@ -171,7 +173,9 @@ function broadcastState(room) {
         cardCount: p.cards.length,
         isTurn: room.status === 'playing' && room.currentPlayerIndex === idx,
         unoDeclared: p.unoDeclared,
-        online: p.online !== false
+        online: p.online !== false,
+        hasWon: p.hasWon || false,
+        rank: p.rank || 0
       })),
       topCard: room.discardPile[0] || null,
       currentColor: room.currentColor,
@@ -185,11 +189,20 @@ function broadcastState(room) {
   });
 }
 
-// Move to the next player
+// Move to the next active player (skipping players who have already won/finished)
 function advanceTurn(room) {
   const numPlayers = room.players.length;
   if (numPlayers === 0) return;
-  room.currentPlayerIndex = (room.currentPlayerIndex + room.direction + numPlayers) % numPlayers;
+  
+  let nextIndex = room.currentPlayerIndex;
+  let count = 0;
+  
+  do {
+    nextIndex = (nextIndex + room.direction + numPlayers) % numPlayers;
+    count++;
+  } while (room.players[nextIndex].hasWon && count < numPlayers);
+  
+  room.currentPlayerIndex = nextIndex;
 }
 
 // Play card logic / validation
@@ -524,6 +537,8 @@ io.on('connection', (socket) => {
     room.players.forEach(p => {
       p.cards = [];
       p.unoDeclared = false;
+      p.hasWon = false;
+      p.rank = null;
       drawCardsForPlayer(room, p, 7);
     });
 
@@ -709,6 +724,7 @@ function processMultipleCardEffects(cards, room, chosenColor) {
     if (playerIndex === -1) return;
 
     const player = room.players[playerIndex];
+    if (player.hasWon) return socket.emit('error_message', 'You have already finished playing!');
     const cardsToPlay = [];
 
     if (cardIds && Array.isArray(cardIds) && cardIds.length > 0) {
@@ -798,11 +814,29 @@ function processMultipleCardEffects(cards, room, chosenColor) {
 
     // Turn resolution & Winner check
     if (player.cards.length === 0) {
-      room.status = 'gameover';
-      addLog(room, `👑 ${player.name} has won the game! Congratulations!`);
-      broadcastState(room);
-      io.to(roomCode).emit('game_over_announcement', { winner: player.name });
-      return;
+      player.hasWon = true;
+      const numFinished = room.players.filter(p => p.hasWon).length;
+      player.rank = numFinished;
+      addLog(room, `👑 ${player.name} finished at Rank #${player.rank}!`);
+      
+      const activePlayers = room.players.filter(p => !p.hasWon);
+      if (activePlayers.length <= 1) {
+        if (activePlayers.length === 1) {
+          activePlayers[0].hasWon = true;
+          activePlayers[0].rank = room.players.length;
+          addLog(room, `🏁 ${activePlayers[0].name} takes the final Rank #${activePlayers[0].rank}.`);
+        }
+        
+        room.status = 'gameover';
+        
+        const standings = [...room.players]
+          .sort((a, b) => (a.rank || 99) - (b.rank || 99))
+          .map(p => ({ name: p.name, rank: p.rank || 99 }));
+          
+        broadcastState(room);
+        io.to(roomCode).emit('game_over_announcement', { winner: standings[0].name, standings });
+        return;
+      }
     }
 
     // Uno Yell handling
@@ -827,6 +861,7 @@ function processMultipleCardEffects(cards, room, chosenColor) {
     if (playerIndex === -1 || room.currentPlayerIndex !== playerIndex) return;
 
     const player = room.players[playerIndex];
+    if (player.hasWon) return;
 
     // If there is a cumulative drawStack penalty (stacking rule)
     if (room.drawStack > 0) {
@@ -890,7 +925,10 @@ function processMultipleCardEffects(cards, room, chosenColor) {
     const playerIndex = room.players.findIndex(p => p.socketId === socket.id);
     if (playerIndex === -1 || room.currentPlayerIndex !== playerIndex) return;
 
-    addLog(room, `${room.players[playerIndex].name} passed their turn.`);
+    const player = room.players[playerIndex];
+    if (player.hasWon) return;
+
+    addLog(room, `${player.name} passed their turn.`);
     advanceTurn(room);
     broadcastState(room);
   });

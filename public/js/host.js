@@ -360,14 +360,22 @@ document.addEventListener('DOMContentLoaded', () => {
       playerDiv.style.left = `calc(50% + ${x}px - 45px)`;
       playerDiv.style.top = `calc(50% + ${y}px - 50px)`;
 
-      const unoBadge = p.unoDeclared ? '<span class="uno-badge">UNO!</span>' : '';
+      const unoBadge = p.unoDeclared && !p.hasWon ? '<span class="uno-badge">UNO!</span>' : '';
+
+      let cardBadgeHtml = `<div class="card-badge">${p.cardCount}</div>`;
+      let wonOverlay = '';
+      if (p.hasWon) {
+        cardBadgeHtml = `<div class="card-badge rank-badge" style="background: var(--clr-yellow); color: #000; font-weight: 800; border: 2px solid #000;">#${p.rank}</div>`;
+        wonOverlay = `<div class="won-overlay-tag" style="position: absolute; top: -14px; font-size: 0.65rem; background: var(--clr-yellow); color: #000; border-radius: 4px; padding: 2px 6px; font-weight: 700; font-family: var(--font-display); box-shadow: 0 0 10px rgba(229, 169, 0, 0.4); text-transform: uppercase; z-index: 10;">Finished</div>`;
+      }
 
       playerDiv.innerHTML = `
-        <div class="avatar-circle">
+        ${wonOverlay}
+        <div class="avatar-circle" style="${p.hasWon ? 'opacity: 0.6; border-color: var(--clr-yellow) !important;' : ''}">
           ${p.avatar}
-          <div class="card-badge">${p.cardCount}</div>
+          ${cardBadgeHtml}
         </div>
-        <div class="name">${p.name}</div>
+        <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}">${p.name}</div>
         ${unoBadge}
       `;
 
@@ -469,15 +477,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 3000);
   });
 
+  // Dismiss overlay when clicked
+  if (unoAlertOverlay) {
+    unoAlertOverlay.addEventListener('click', () => {
+      unoAlertOverlay.classList.remove('active');
+    });
+  }
+
   // Game Over Alert
   socket.on('game_over_announcement', (data) => {
-    unoShoutTitle.innerText = 'VICTORY!';
-    unoShoutMsg.innerText = `${data.winner} won the game!`;
+    unoShoutTitle.innerText = 'MATCH OVER!';
+    let msg = `<div style="display: flex; flex-direction: column; gap: 8px; font-size: 1rem; margin-top: 10px; width: 240px; margin-left: auto; margin-right: auto; text-align: left;">`;
+    if (data.standings) {
+      data.standings.forEach(s => {
+        msg += `<div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #222; padding-bottom: 4px; ${s.rank === 1 ? 'color: var(--clr-yellow); font-weight: 700;' : ''}">
+          <span>Rank #${s.rank}</span>
+          <span>${s.name}</span>
+        </div>`;
+      });
+    } else {
+      msg += `<div style="text-align: center;">Winner: ${data.winner}</div>`;
+    }
+    msg += `</div><p style="font-size: 0.7rem; color: #555; margin-top: 16px; text-transform: uppercase; text-align: center;">Click anywhere to close</p>`;
+    
+    unoShoutMsg.innerHTML = msg;
     unoAlertOverlay.classList.add('active');
-    // Keep it up or let them dismiss it
-    setTimeout(() => {
-      unoAlertOverlay.classList.remove('active');
-    }, 6000);
   });
 
   // Standard Alerts

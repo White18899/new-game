@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPassTurn = document.getElementById('btnPassTurn');
   const playerHand = document.getElementById('playerHand');
   const colorPickerOverlay = document.getElementById('colorPickerOverlay');
+  const gameOverOverlay = document.getElementById('gameOverOverlay');
+  const gameOverStandings = document.getElementById('gameOverStandings');
+  const btnExitGameOver = document.getElementById('btnExitGameOver');
 
   // Populate HUD details
   hudAvatar.innerText = playerAvatar;
@@ -123,13 +126,20 @@ document.addEventListener('DOMContentLoaded', () => {
       turnIndicator.className = 'game-status-glow waiting';
       turnIndicator.innerText = 'GAME OVER!';
     } else {
-      if (isMyTurn) {
+      const me = state.players.find(p => p.name === playerName);
+      if (me && me.hasWon) {
+        turnIndicator.className = 'game-status-glow your-turn';
+        turnIndicator.innerText = `FINISHED! RANK #${me.rank}`;
+        turnIndicator.style.borderColor = 'var(--clr-yellow)';
+      } else if (isMyTurn) {
         turnIndicator.className = 'game-status-glow your-turn';
         turnIndicator.innerText = 'YOUR TURN!';
+        turnIndicator.style.borderColor = '';
       } else {
         const currentTurnPlayer = state.players[state.currentPlayerIndex] || { name: 'Player' };
         turnIndicator.className = 'game-status-glow waiting';
         turnIndicator.innerText = `WAITING FOR ${currentTurnPlayer.name.toUpperCase()}...`;
+        turnIndicator.style.borderColor = '';
       }
     }
 
@@ -454,6 +464,43 @@ document.addEventListener('DOMContentLoaded', () => {
         colorPickerOverlay.classList.remove('active');
       }
     });
+  });
+
+  // Dismiss game over overlay when clicked
+  if (btnExitGameOver) {
+    btnExitGameOver.addEventListener('click', () => {
+      gameOverOverlay.classList.remove('active');
+    });
+  }
+
+  // Handle game over announcement and standings
+  socket.on('game_over_announcement', (data) => {
+    gameOverStandings.innerHTML = '';
+    
+    if (data.standings) {
+      data.standings.forEach(s => {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justify = 'space-between';
+        row.style.borderBottom = '1px dashed #222';
+        row.style.paddingBottom = '4px';
+        row.style.fontSize = '0.9rem';
+        if (s.name === playerName) {
+          row.style.color = 'var(--clr-yellow)';
+          row.style.fontWeight = '700';
+        }
+        
+        row.innerHTML = `
+          <span>Rank #${s.rank}</span>
+          <span>${s.name} ${s.name === playerName ? '(You)' : ''}</span>
+        `;
+        gameOverStandings.appendChild(row);
+      });
+    } else {
+      gameOverStandings.innerHTML = `<div style="text-align: center;">Winner: ${data.winner}</div>`;
+    }
+    
+    gameOverOverlay.classList.add('active');
   });
 
   // Catch notification events from room

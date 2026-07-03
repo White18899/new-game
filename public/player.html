@@ -98,6 +98,17 @@
         </div>
       </div>
     </div>
+
+    <!-- Game Over Overlay Modal -->
+    <div class="color-picker-overlay" id="gameOverOverlay">
+      <div class="color-picker-card glass-panel" style="text-align: center; max-width: 360px; width: 90%;">
+        <h2 id="gameOverTitle" class="text-shimmer" style="font-size: 2rem; font-weight: 800; margin-bottom: 12px;">GAME OVER</h2>
+        <div id="gameOverStandings" style="margin: 20px 0; text-align: left; display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto; padding-right: 4px;">
+          <!-- Standings loaded dynamically -->
+        </div>
+        <button class="btn btn-primary" id="btnExitGameOver" style="width: 100%; margin-top: 10px;">Close Standings</button>
+      </div>
+    </div>
   </div>
 
   <!-- Socket.io -->
