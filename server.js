@@ -47,8 +47,8 @@ for (const interfaceName in networkInterfaces) {
 //   },
 //   customCards: [],            // List of custom rules/cards designed for this room
 //   logs: []                    // Game action logs
-// }
 const rooms = new Map();
+const hostDisconnectTimeouts = new Map();
 
 // Helper: generate 4-character room code
 function generateRoomCode() {
@@ -140,7 +140,8 @@ function broadcastState(room) {
         avatar: p.avatar,
         cardCount: p.cards.length,
         socketId: p.socketId,
-        unoDeclared: p.unoDeclared
+        unoDeclared: p.unoDeclared,
+        online: p.online !== false
       })),
       status: room.status,
       discardPile: room.discardPile,
@@ -169,7 +170,8 @@ function broadcastState(room) {
         avatar: p.avatar,
         cardCount: p.cards.length,
         isTurn: room.status === 'playing' && room.currentPlayerIndex === idx,
-        unoDeclared: p.unoDeclared
+        unoDeclared: p.unoDeclared,
+        online: p.online !== false
       })),
       topCard: room.discardPile[0] || null,
       currentColor: room.currentColor,
@@ -177,7 +179,8 @@ function broadcastState(room) {
       drawStack: room.drawStack,
       direction: room.direction,
       status: room.status,
-      roomCode: room.roomCode
+      roomCode: room.roomCode,
+      houseRules: room.houseRules
     });
   });
 }
@@ -193,6 +196,10 @@ function advanceTurn(room) {
 function isValidPlay(card, room, playerIndex) {
   // If stacking is active and drawStack > 0, player can only play draw cards (stackable)
   if (room.houseRules.stacking && room.drawStack > 0) {
+    // If no2on4 is active and top card is wild4 (+4), block +2 (draw2)
+    if (room.houseRules.no2on4 && room.currentValue === 'wild4' && card.value === 'draw2') {
+      return false;
+    }
     if (card.value === 'draw2' || card.value === 'wild4') {
       return true;
     }
@@ -410,7 +417,8 @@ io.on('connection', (socket) => {
       houseRules: {
         stacking: true,
         drawToMatch: false,
-        jumpIn: false
+        jumpIn: false,
+        no2on4: false
       },
       customCards: [],
       logs: []
@@ -425,7 +433,28 @@ io.on('connection', (socket) => {
       localIP,
       port: PORT
     });
-    broadcastState(room);
+  });
+
+  // Reconnect Host
+  socket.on('reconnect_host', ({ roomCode }, callback) => {
+    const upperCode = roomCode ? roomCode.toUpperCase().trim() : '';
+    const room = rooms.get(upperCode);
+
+    if (room) {
+      // Cancel pending room termination timeout
+      if (hostDisconnectTimeouts.has(upperCode)) {
+        clearTimeout(hostDisconnectTimeouts.get(upperCode));
+        hostDisconnectTimeouts.delete(upperCode);
+      }
+
+      room.hostSocketId = socket.id;
+      socket.join(upperCode);
+      addLog(room, `Host reconnected. Resuming table view.`);
+      callback({ status: 'ok', roomCode: upperCode });
+      broadcastState(room);
+    } else {
+      callback({ status: 'error', message: 'Room not found or expired.' });
+    }
   });
 
   // Join Room (Player)
@@ -436,19 +465,38 @@ io.on('connection', (socket) => {
     if (!room) {
       return callback({ status: 'error', message: 'Room not found. Make sure the code is correct.' });
     }
+
+    const trimmedName = (playerName || '').trim();
+    // Check if player name already exists in room (reconnect flow)
+    const existingPlayer = room.players.find(p => p.name.toLowerCase() === trimmedName.toLowerCase());
+
+    if (existingPlayer) {
+      // Reconnect/Resume flow
+      existingPlayer.socketId = socket.id;
+      existingPlayer.online = true;
+      socket.join(upperCode);
+      addLog(room, `Player ${existingPlayer.name} reconnected to game.`);
+      callback({ status: 'ok', roomCode: upperCode });
+      broadcastState(room);
+      return;
+    }
+
+    // New players cannot join an active match
     if (room.status !== 'lobby') {
       return callback({ status: 'error', message: 'Game has already started in this room.' });
     }
+
     if (room.players.some(p => p.socketId === socket.id)) {
       return callback({ status: 'error', message: 'You are already in this room.' });
     }
 
     const player = {
       socketId: socket.id,
-      name: playerName.trim() || `Player ${room.players.length + 1}`,
+      name: trimmedName || `Player ${room.players.length + 1}`,
       avatar: avatar || '🦖',
       cards: [],
-      unoDeclared: false
+      unoDeclared: false,
+      online: true
     };
 
     room.players.push(player);
@@ -503,49 +551,245 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
+// Process action triggers for multiple cards played together
+function processMultipleCardEffects(cards, room, chosenColor) {
+  let skipCount = 0;
+  let drawCount = 0;
+  let reverseDirectionCount = 0;
+  let forceColor = false;
+  const customActionList = [];
+  
+  // The top card (last card in the played array) determines the main visual state
+  const mainCard = cards[cards.length - 1];
+
+  cards.forEach(card => {
+    if (card.type === 'action') {
+      if (card.value === 'skip') {
+        skipCount++;
+      } else if (card.value === 'reverse') {
+        reverseDirectionCount++;
+      } else if (card.value === 'draw2') {
+        drawCount += 2;
+      }
+    } else if (card.type === 'wild') {
+      forceColor = true;
+      if (card.value === 'wild4') {
+        drawCount += 4;
+      }
+    } else if (card.type === 'custom') {
+      if (card.actions) {
+        customActionList.push(...card.actions);
+      }
+    }
+  });
+
+  // 1. Color resolution: based on main card and chosenColor
+  if (forceColor || mainCard.color === 'wild') {
+    room.currentColor = chosenColor || 'red';
+  } else {
+    room.currentColor = mainCard.color;
+  }
+  room.currentValue = mainCard.value;
+
+  // 2. Reverse resolution
+  if (reverseDirectionCount > 0) {
+    // If odd number of reverses, change direction
+    if (reverseDirectionCount % 2 === 1) {
+      if (room.players.length === 2) {
+        skipCount += reverseDirectionCount;
+      } else {
+        room.direction *= -1;
+        addLog(room, `Play direction reversed! Now flowing ${room.direction === 1 ? 'clockwise' : 'counter-clockwise'}.`);
+      }
+    }
+  }
+
+  // 3. Stacking vs Draw resolution
+  if (drawCount > 0) {
+    if (room.houseRules.stacking) {
+      room.drawStack += drawCount;
+      addLog(room, `Stack increased! Cumulative draw penalty is now +${room.drawStack}.`);
+    } else {
+      // Immediate draw for next player without stacking
+      const nextIndex = (room.currentPlayerIndex + room.direction + room.players.length) % room.players.length;
+      const targetPlayer = room.players[nextIndex];
+      drawCardsForPlayer(room, targetPlayer, drawCount);
+      addLog(room, `${targetPlayer.name} draws ${drawCount} cards.`);
+      skipCount++; // Draw penalty skips their turn
+    }
+  }
+
+  // 4. Custom action processing
+  customActionList.forEach(act => {
+    if (act.type === 'draw') {
+      const count = parseInt(act.count) || 1;
+      if (room.houseRules.stacking) {
+        room.drawStack += count;
+        addLog(room, `Custom Stack! Play +${count} cards. Cumulative stack: +${room.drawStack}.`);
+      } else {
+        const nextIndex = (room.currentPlayerIndex + room.direction + room.players.length) % room.players.length;
+        const targetPlayer = room.players[nextIndex];
+        drawCardsForPlayer(room, targetPlayer, count);
+        addLog(room, `${targetPlayer.name} draws ${count} cards from custom card.`);
+        skipCount++;
+      }
+    } else if (act.type === 'skip') {
+      skipCount++;
+    } else if (act.type === 'reverse') {
+      if (room.players.length === 2) {
+        skipCount++;
+      } else {
+        room.direction *= -1;
+        addLog(room, `Play direction reversed by custom rule!`);
+      }
+    } else if (act.type === 'choose_color') {
+      room.currentColor = chosenColor || 'red';
+    } else if (act.type === 'swap') {
+      const activePlayer = room.players[room.currentPlayerIndex];
+      let targetIndex = room.currentPlayerIndex;
+      if (act.target === 'next') {
+        targetIndex = (room.currentPlayerIndex + room.direction + room.players.length) % room.players.length;
+      } else if (act.target === 'previous') {
+        targetIndex = (room.currentPlayerIndex - room.direction + room.players.length) % room.players.length;
+      } else if (act.target === 'lowest') {
+        let minCards = 999;
+        room.players.forEach((p, idx) => {
+          if (idx !== room.currentPlayerIndex && p.cards.length < minCards) {
+            minCards = p.cards.length;
+            targetIndex = idx;
+          }
+        });
+      }
+      
+      if (targetIndex !== room.currentPlayerIndex) {
+        const targetPlayer = room.players[targetIndex];
+        const temp = activePlayer.cards;
+        activePlayer.cards = targetPlayer.cards;
+        targetPlayer.cards = temp;
+        addLog(room, `🔄 Custom Swap! ${activePlayer.name} swapped hands with ${targetPlayer.name}!`);
+      }
+    } else if (act.type === 'draw_till_color') {
+      const nextIndex = (room.currentPlayerIndex + room.direction + room.players.length) % room.players.length;
+      const targetPlayer = room.players[nextIndex];
+      let drawnCount = 0;
+      let cardMatched = false;
+
+      while (!cardMatched && room.deck.length + room.discardPile.length > 1) {
+        if (room.deck.length === 0) {
+          recycleDiscardPile(room);
+        }
+        const cardDrawn = room.deck.pop();
+        targetPlayer.cards.push(cardDrawn);
+        drawnCount++;
+        if (cardDrawn.color === room.currentColor || cardDrawn.color === 'wild' || cardDrawn.color === 'wild4') {
+          cardMatched = true;
+        }
+      }
+      addLog(room, `🎨 Draw-Till-Color! ${targetPlayer.name} drew ${drawnCount} cards until matching ${room.currentColor}.`);
+      skipCount++;
+    }
+  });
+
+  // Advance turn
+  advanceTurn(room);
+  
+  // Apply skips
+  for (let i = 0; i < skipCount; i++) {
+    addLog(room, `${room.players[room.currentPlayerIndex].name} is skipped!`);
+    advanceTurn(room);
+  }
+}
+
   // Play Card
-  socket.on('play_card', ({ roomCode, cardId, chosenColor }) => {
+  socket.on('play_card', ({ roomCode, cardId, cardIds, chosenColor }) => {
     const room = rooms.get(roomCode);
     if (!room || room.status !== 'playing') return;
 
     const playerIndex = room.players.findIndex(p => p.socketId === socket.id);
     if (playerIndex === -1) return;
 
+    const player = room.players[playerIndex];
+    const cardsToPlay = [];
+
+    if (cardIds && Array.isArray(cardIds) && cardIds.length > 0) {
+      // Multiple cards throwing
+      for (const id of cardIds) {
+        const card = player.cards.find(c => c.id === id);
+        if (!card) return socket.emit('error_message', 'Player does not have all selected cards.');
+        cardsToPlay.push(card);
+      }
+      
+      const val = cardsToPlay[0].value;
+      const allSameValue = cardsToPlay.every(c => c.value === val);
+      if (!allSameValue) {
+        return socket.emit('error_message', 'All thrown cards must have the same number/value.');
+      }
+    } else if (cardId) {
+      // Single card play
+      const card = player.cards.find(c => c.id === cardId);
+      if (!card) return socket.emit('error_message', 'Player does not have the selected card.');
+      cardsToPlay.push(card);
+    } else {
+      return socket.emit('error_message', 'No card selected to play.');
+    }
+
     // Check if it is player's turn (unless jump-in house rule is active)
     let isTurn = room.currentPlayerIndex === playerIndex;
     let isJumpIn = false;
 
-    const player = room.players[playerIndex];
-    const cardIndex = player.cards.findIndex(c => c.id === cardId);
-    if (cardIndex === -1) return; // Player doesn't have this card
-    const card = player.cards[cardIndex];
-
     if (!isTurn) {
       if (room.houseRules.jumpIn) {
-        // Jump-in requires matching color AND value exactly, or matching number/symbol exactly
         const topCard = room.discardPile[0];
-        if (topCard && card.color === room.currentColor && card.value === room.currentValue && card.color !== 'wild') {
+        const jumpInCard = cardsToPlay.find(c => topCard && c.color === room.currentColor && c.value === room.currentValue && c.color !== 'wild');
+        if (jumpInCard) {
           isJumpIn = true;
-          room.currentPlayerIndex = playerIndex; // Set turn index to jump-in player
+          room.currentPlayerIndex = playerIndex;
           addLog(room, `⚡ Jump-In! ${player.name} played out of turn.`);
         } else {
-          return socket.emit('error_message', 'It is not your turn, and card is not an exact match for Jump-In.');
+          return socket.emit('error_message', 'It is not your turn, and none of your selected cards is an exact match for Jump-In.');
         }
       } else {
         return socket.emit('error_message', 'It is not your turn.');
       }
     }
 
-    // Validate play logic
-    if (!isValidPlay(card, room, playerIndex)) {
-      return socket.emit('error_message', 'Invalid card play! Matches must be color, value, or Wild.');
+    // Validate play logic for set
+    if (room.houseRules.stacking && room.drawStack > 0) {
+      const allStackable = cardsToPlay.every(c => {
+        if (room.houseRules.no2on4 && room.currentValue === 'wild4' && c.value === 'draw2') {
+          return false;
+        }
+        if (c.value === 'draw2' || c.value === 'wild4') return true;
+        if (c.type === 'custom' && c.actions.some(a => a.type === 'draw')) return true;
+        return false;
+      });
+      if (!allStackable) {
+        return socket.emit('error_message', 'You must play stackable Draw cards (+2, +4, custom draw) during an active penalty! Note that +2 cannot stack on +4.');
+      }
+    }
+
+    const hasValidAnchor = cardsToPlay.some(c => isValidPlay(c, room, playerIndex));
+    if (!hasValidAnchor) {
+      return socket.emit('error_message', 'None of the selected cards matches the current discard pile color or value.');
     }
 
     // Perform play
-    player.cards.splice(cardIndex, 1);
-    room.discardPile.unshift(card);
+    cardsToPlay.forEach(card => {
+      const idx = player.cards.findIndex(c => c.id === card.id);
+      player.cards.splice(idx, 1);
+    });
 
-    addLog(room, `${player.name} played ${card.color === 'wild' ? 'Wild' : card.color.toUpperCase()} ${card.value}.`);
+    cardsToPlay.forEach(card => {
+      room.discardPile.unshift(card);
+    });
+
+    const topCard = cardsToPlay[cardsToPlay.length - 1];
+
+    if (cardsToPlay.length > 1) {
+      addLog(room, `${player.name} played a MULTIPLE of same value: ${cardsToPlay.map(c => `${c.color.toUpperCase()} ${c.value}`).join(', ')}.`);
+    } else {
+      addLog(room, `${player.name} played ${topCard.color === 'wild' ? 'Wild' : topCard.color.toUpperCase()} ${topCard.value}.`);
+    }
 
     // Reset UNO yell status if they have more than 1 card
     if (player.cards.length > 1) {
@@ -561,9 +805,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Uno Yell handling:
-    // If player has exactly 1 card left, and did not press UNO! before playing their card,
-    // they are vulnerable to a Call Out until the next player starts their turn.
+    // Uno Yell handling
     if (player.cards.length === 1 && !player.unoDeclared) {
       room.calledOutPending = true;
       addLog(room, `⚠️ ${player.name} has 1 card left but hasn't yelled UNO!`);
@@ -571,8 +813,8 @@ io.on('connection', (socket) => {
       room.calledOutPending = false;
     }
 
-    // Process action triggers (changes turn index, handles stacking, etc.)
-    processCardEffects(card, room, chosenColor);
+    // Process action triggers
+    processMultipleCardEffects(cardsToPlay, room, chosenColor);
     broadcastState(room);
   });
 
@@ -657,19 +899,19 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  // Call Out Player (for forgetting UNO)
+  // Call Out Player (for forgetting UNO) - anyone can catch at any time
   socket.on('call_out_uno', ({ roomCode }) => {
     const room = rooms.get(roomCode);
-    if (!room || !room.calledOutPending) return;
+    if (!room || room.status !== 'playing') return;
 
-    // Find the vulnerable player (has 1 card, not declared uno)
+    // Find the vulnerable player (has exactly 1 card, not declared uno)
     const vulnerablePlayer = room.players.find(p => p.cards.length === 1 && !p.unoDeclared);
     const caller = room.players.find(p => p.socketId === socket.id) || { name: 'Host' };
 
     if (vulnerablePlayer) {
       drawCardsForPlayer(room, vulnerablePlayer, 2);
       room.calledOutPending = false;
-      addLog(room, `🚨 ${caller.name} called out ${vulnerablePlayer.name}! ${vulnerablePlayer.name} draws 2 cards penalty.`);
+      addLog(room, `🚨 ${caller.name} caught ${vulnerablePlayer.name} with 1 card! ${vulnerablePlayer.name} draws 2 cards penalty.`);
       io.to(roomCode).emit('uno_notification', { message: `${caller.name} caught ${vulnerablePlayer.name}! Drawn +2 cards!` });
       broadcastState(room);
     }
@@ -701,34 +943,38 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`Socket disconnected: ${socket.id}`);
     
-    // Check if the disconnected socket was a host
     for (const [code, room] of rooms.entries()) {
+      // 1. Host Disconnect Grace Period
       if (room.hostSocketId === socket.id) {
-        addLog(room, `Host disconnected. Closing room.`);
-        io.to(code).emit('room_closed', 'Host has disconnected.');
-        rooms.delete(code);
+        addLog(room, `Host disconnected. Waiting 60s for host to reconnect...`);
+        
+        const timeoutId = setTimeout(() => {
+          addLog(room, `Host connection lost permanently. Closing room.`);
+          io.to(code).emit('room_closed', 'Host connection has been lost.');
+          rooms.delete(code);
+          hostDisconnectTimeouts.delete(code);
+        }, 60000);
+        
+        hostDisconnectTimeouts.set(code, timeoutId);
         continue;
       }
 
-      // Check if it was a player
+      // 2. Player Disconnect
       const playerIndex = room.players.findIndex(p => p.socketId === socket.id);
       if (playerIndex !== -1) {
-        const name = room.players[playerIndex].name;
-        room.players.splice(playerIndex, 1);
-        addLog(room, `Player ${name} left the room.`);
+        const player = room.players[playerIndex];
         
         if (room.status === 'playing') {
-          if (room.players.length < 2) {
-            room.status = 'gameover';
-            addLog(room, `Not enough players left. Game ended.`);
-          } else {
-            // Adjust currentPlayerIndex if necessary
-            if (room.currentPlayerIndex >= room.players.length) {
-              room.currentPlayerIndex = 0;
-            }
-          }
+          // Keep player in the match, just mark offline so they can refresh/reconnect
+          player.online = false;
+          addLog(room, `Player ${player.name} went offline.`);
+          broadcastState(room);
+        } else {
+          // If still in lobby, remove them immediately
+          room.players.splice(playerIndex, 1);
+          addLog(room, `Player ${player.name} left the lobby.`);
+          broadcastState(room);
         }
-        broadcastState(room);
       }
     }
   });

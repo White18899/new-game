@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const actionAlertBar = document.getElementById('actionAlertBar');
   const btnUno = document.getElementById('btnUno');
   const btnCallOut = document.getElementById('btnCallOut');
+  const btnPlaySelected = document.getElementById('btnPlaySelected');
   const playerHand = document.getElementById('playerHand');
   const colorPickerOverlay = document.getElementById('colorPickerOverlay');
 
@@ -39,6 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeValue = '';
   let activeDrawStack = 0;
   let pendingWildCardId = null;
+  let selectedCards = [];
+  let pendingWildCardIds = null;
+  let activeHouseRules = {};
 
   // Re-join the room with this socket
   socket.on('connect', () => {
@@ -58,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activeColor = state.currentColor;
     activeValue = state.currentValue;
     activeDrawStack = state.drawStack;
+    activeHouseRules = state.houseRules || {};
 
     // 1. Turn HUD Indicator
     if (state.status === 'lobby') {
@@ -115,6 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render player cards
   function renderHand() {
     playerHand.innerHTML = '';
+    selectedCards = selectedCards.filter(id => myHand.some(c => c.id === id));
+    updatePlayButtonHUD();
 
     if (myHand.length === 0) {
       playerHand.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; width: 100%; text-align: center; padding: 20px;">No cards in hand.</div>';
@@ -138,16 +145,22 @@ document.addEventListener('DOMContentLoaded', () => {
         cardEl.classList.add('playable');
       }
 
+      if (selectedCards.includes(c.id)) {
+        cardEl.classList.add('selected-to-play');
+      }
+
       const sym = c.value;
       let displaySym = sym;
       let extraClass = '';
 
       if (c.type === 'action') {
-        displaySym = '';
-        extraClass = `icon-${sym}`;
+        extraClass = '';
+        if (sym === 'skip') displaySym = '⊘';
+        else if (sym === 'reverse') displaySym = '⇆';
+        else if (sym === 'draw2') displaySym = '+2';
       } else if (c.type === 'wild') {
-        displaySym = '';
-        extraClass = `icon-${sym}`;
+        displaySym = (sym === 'wild4') ? '+4' : 'W';
+        extraClass = '';
       }
 
       cardEl.innerHTML = `
@@ -161,15 +174,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Handle card selection play
       cardEl.addEventListener('click', () => {
-        if (!playable) return;
-        
-        // If it's a Wild or customized color chooser
-        if (c.color === 'wild' || c.color === 'wild4' || (c.type === 'custom' && c.actions.some(a => a.type === 'choose_color'))) {
-          pendingWildCardId = c.id;
-          colorPickerOverlay.classList.add('active');
+        const hasDuplicates = myHand.filter(card => card.value === c.value).length > 1;
+
+        if (hasDuplicates || selectedCards.length > 0) {
+          if (!playable && selectedCards.length === 0) return; // Can't start selection with unplayable card
+
+          if (selectedCards.length > 0) {
+            const firstCard = myHand.find(card => card.id === selectedCards[0]);
+            if (firstCard && c.value !== firstCard.value) {
+              // Tapped different value card. Clear old selection.
+              document.querySelectorAll('.uno-card').forEach(el => el.classList.remove('selected-to-play'));
+              selectedCards = [];
+              if (!playable) {
+                updatePlayButtonHUD();
+                return;
+              }
+            }
+          }
+
+          // Toggle selection
+          const idx = selectedCards.indexOf(c.id);
+          if (idx !== -1) {
+            selectedCards.splice(idx, 1);
+            cardEl.classList.remove('selected-to-play');
+          } else {
+            selectedCards.push(c.id);
+            cardEl.classList.add('selected-to-play');
+          }
+          updatePlayButtonHUD();
         } else {
-          // Play standard card
-          socket.emit('play_card', { roomCode, cardId: c.id });
+          // Standard single play
+          if (!playable) return;
+          
+          if (c.color === 'wild' || c.color === 'wild4' || (c.type === 'custom' && c.actions.some(a => a.type === 'choose_color'))) {
+            pendingWildCardId = c.id;
+            pendingWildCardIds = null;
+            colorPickerOverlay.classList.add('active');
+          } else {
+            socket.emit('play_card', { roomCode, cardId: c.id });
+          }
         }
       });
 
@@ -208,11 +251,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let extraClass = '';
 
     if (card.type === 'action') {
-      displaySym = '';
-      extraClass = `icon-${sym}`;
+      extraClass = '';
+      if (sym === 'skip') displaySym = '⊘';
+      else if (sym === 'reverse') displaySym = '⇆';
+      else if (sym === 'draw2') displaySym = '+2';
     } else if (card.type === 'wild') {
-      displaySym = '';
-      extraClass = `icon-${sym}`;
+      displaySym = (sym === 'wild4') ? '+4' : 'W';
+      extraClass = '';
     }
 
     cardEl.innerHTML = `
@@ -227,12 +272,18 @@ document.addEventListener('DOMContentLoaded', () => {
     boardDiscardPreview.appendChild(cardEl);
   }
 
+
+
   // Card Playability Rule Checker (Local helper matching server checks)
   function isPlayable(card) {
     if (!isMyTurn) return false;
 
     // Stacking rule is active
     if (activeDrawStack > 0) {
+      // If no2on4 stacking is active and the top card is wild4 (+4), we cannot play +2 (draw2)
+      if (activeHouseRules.no2on4 && activeValue === 'wild4' && card.value === 'draw2') {
+        return false;
+      }
       if (card.value === 'draw2' || card.value === 'wild4') {
         return true;
       }
@@ -271,6 +322,47 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.emit('call_out_uno', { roomCode });
   });
 
+  // Play Selected Cards click handler
+  btnPlaySelected.addEventListener('click', () => {
+    if (selectedCards.length === 0) return;
+
+    const hasWild = selectedCards.some(id => {
+      const c = myHand.find(card => card.id === id);
+      if (!c) return false;
+      return c.color === 'wild' || c.color === 'wild4' || (c.type === 'custom' && c.actions && c.actions.some(a => a.type === 'choose_color'));
+    });
+
+    if (hasWild) {
+      pendingWildCardIds = [...selectedCards];
+      pendingWildCardId = null;
+      colorPickerOverlay.classList.add('active');
+    } else {
+      socket.emit('play_card', {
+        roomCode,
+        cardIds: selectedCards
+      });
+      selectedCards = [];
+      updatePlayButtonHUD();
+    }
+  });
+
+  function updatePlayButtonHUD() {
+    if (selectedCards.length === 0) {
+      btnPlaySelected.style.display = 'none';
+    } else {
+      btnPlaySelected.style.display = 'inline-block';
+      if (selectedCards.length === 1) {
+        btnPlaySelected.innerText = 'Throw Card';
+      } else if (selectedCards.length === 2) {
+        btnPlaySelected.innerText = 'Throw Pair';
+      } else if (selectedCards.length === 3) {
+        btnPlaySelected.innerText = 'Throw Triple';
+      } else {
+        btnPlaySelected.innerText = `Throw ${selectedCards.length} Cards`;
+      }
+    }
+  }
+
   // Color picker events
   document.querySelectorAll('.color-picker-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -282,6 +374,16 @@ document.addEventListener('DOMContentLoaded', () => {
           chosenColor: chosenColor
         });
         pendingWildCardId = null;
+        colorPickerOverlay.classList.remove('active');
+      } else if (pendingWildCardIds && pendingWildCardIds.length > 0) {
+        socket.emit('play_card', {
+          roomCode,
+          cardIds: pendingWildCardIds,
+          chosenColor: chosenColor
+        });
+        pendingWildCardIds = null;
+        selectedCards = [];
+        updatePlayButtonHUD();
         colorPickerOverlay.classList.remove('active');
       }
     });
@@ -301,4 +403,5 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(msg);
     window.location.href = '/index.html';
   });
+
 });

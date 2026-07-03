@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const roomCode = sessionStorage.getItem('uno_roomCode');
   const isHost = sessionStorage.getItem('uno_isHost') === 'true';
+  let roomCode = sessionStorage.getItem('uno_roomCode');
 
-  if (!roomCode || !isHost) {
-    alert('Invalid room session. Returning to home lobby.');
+  if (!isHost) {
+    alert('Invalid host session. Returning to home lobby.');
     window.location.href = '/index.html';
     return;
   }
@@ -11,14 +11,37 @@ document.addEventListener('DOMContentLoaded', () => {
   // Connect socket
   const socket = io();
 
-  // Socket connected, join room as host
+  // Socket connected, request room creation or reconnect
   socket.on('connect', () => {
-    console.log(`Connected to server as Host for room ${roomCode}`);
-    // Register this socket as host (by re-confirming room code in lobby state or checking if room exists)
-    // Actually the server already knows this is the host socket because we created the room, 
-    // but just to be sure we let the server know we're linking the host socket:
-    document.getElementById('roomCodeVal').innerText = roomCode;
+    if (roomCode) {
+      // Try to reconnect host
+      socket.emit('reconnect_host', { roomCode }, (res) => {
+        if (res.status === 'ok') {
+          console.log(`Successfully reconnected host to room: ${roomCode}`);
+          document.getElementById('roomCodeVal').innerText = roomCode;
+        } else {
+          console.log(`Failed to reconnect host: ${res.message}. Creating a new room.`);
+          createNewRoom();
+        }
+      });
+    } else {
+      createNewRoom();
+    }
   });
+
+  function createNewRoom() {
+    socket.emit('create_room', (res) => {
+      if (res.status === 'ok') {
+        roomCode = res.roomCode;
+        sessionStorage.setItem('uno_roomCode', roomCode);
+        document.getElementById('roomCodeVal').innerText = roomCode;
+        console.log(`Lobby successfully created on server with room code: ${roomCode}`);
+      } else {
+        alert('Failed to create room. Returning to lobby.');
+        window.location.href = '/index.html';
+      }
+    });
+  }
 
   // UI Targets
   const lobbyPanel = document.getElementById('lobbyPanel');
@@ -42,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ruleStacking = document.getElementById('ruleStacking');
   const ruleDrawMatch = document.getElementById('ruleDrawMatch');
   const ruleJumpIn = document.getElementById('ruleJumpIn');
+  const ruleNo2on4 = document.getElementById('ruleNo2on4');
 
   // Custom Card Creator UI Targets
   const custName = document.getElementById('custName');
@@ -139,12 +163,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Bind Rule Toggles
-  [ruleStacking, ruleDrawMatch, ruleJumpIn].forEach(switchEl => {
+  [ruleStacking, ruleDrawMatch, ruleJumpIn, ruleNo2on4].forEach(switchEl => {
     switchEl.addEventListener('change', (e) => {
       let ruleKey = '';
       if (switchEl === ruleStacking) ruleKey = 'stacking';
       if (switchEl === ruleDrawMatch) ruleKey = 'drawToMatch';
       if (switchEl === ruleJumpIn) ruleKey = 'jumpIn';
+      if (switchEl === ruleNo2on4) ruleKey = 'no2on4';
 
       socket.emit('toggle_house_rule', {
         roomCode,
@@ -199,6 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnStartGame.disabled = players.length < 2;
   }
+
+
 
   // Render playing game board
   function renderGameTable(state) {
@@ -324,11 +351,13 @@ document.addEventListener('DOMContentLoaded', () => {
       let extraClass = '';
 
       if (c.type === 'action') {
-        displaySym = '';
-        extraClass = `icon-${sym}`;
+        extraClass = '';
+        if (sym === 'skip') displaySym = '⊘';
+        else if (sym === 'reverse') displaySym = '⇆';
+        else if (sym === 'draw2') displaySym = '+2';
       } else if (c.type === 'wild') {
-        displaySym = '';
-        extraClass = `icon-${sym}`;
+        displaySym = (sym === 'wild4') ? '+4' : 'W';
+        extraClass = '';
       }
 
       cardEl.innerHTML = `
@@ -399,4 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(msg);
     window.location.href = '/index.html';
   });
+
+
 });
