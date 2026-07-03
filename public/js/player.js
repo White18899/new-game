@@ -32,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const gameOverOverlay = document.getElementById('gameOverOverlay');
   const gameOverStandings = document.getElementById('gameOverStandings');
   const btnExitGameOver = document.getElementById('btnExitGameOver');
+  const btnPlayerRematch = document.getElementById('btnPlayerRematch');
+  const opponentsList = document.getElementById('opponentsList');
+  const recentPlaysFeed = document.getElementById('recentPlaysFeed');
 
   // Populate HUD details
   hudAvatar.innerText = playerAvatar;
@@ -180,7 +183,66 @@ document.addEventListener('DOMContentLoaded', () => {
       btnCallOut.style.display = 'none';
     }
 
-    // 6. Render Hand
+    // 6. Update opponents list HUD
+    if (opponentsList) {
+      opponentsList.innerHTML = '';
+      const otherPlayers = state.players.filter(p => p.name !== playerName);
+      if (otherPlayers.length === 0) {
+        opponentsList.innerHTML = `<div style="color: var(--text-secondary); text-align: center; padding-top: 24px; font-style: italic;">No opponents yet</div>`;
+      } else {
+        otherPlayers.forEach(p => {
+          const div = document.createElement('div');
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.justify = 'space-between';
+          div.style.padding = '4px 6px';
+          div.style.borderRadius = '4px';
+          div.style.border = p.isTurn ? '1px solid #ffffff' : '1px solid transparent';
+          if (p.isTurn) {
+            div.style.boxShadow = '0 0 8px rgba(255,255,255,0.2)';
+            div.style.background = 'rgba(255,255,255,0.05)';
+          }
+
+          let rightContent = '';
+          if (p.hasWon) {
+            rightContent = `<span style="color: var(--clr-yellow); font-weight: 700;">#${p.rank}</span>`;
+          } else {
+            rightContent = `<span class="opponent-cards-count" style="color: var(--text-secondary);">${p.cardCount}</span>`;
+          }
+
+          div.innerHTML = `
+            <div class="opponent-name-wrapper">
+              <span>${p.avatar}</span>
+              <span style="${p.isTurn ? 'font-weight: 700; color: #fff;' : 'color: #ccc;'}">${p.name}</span>
+            </div>
+            ${rightContent}
+          `;
+          opponentsList.appendChild(div);
+        });
+      }
+    }
+
+    // 7. Update recent plays feed
+    if (recentPlaysFeed && state.logs) {
+      recentPlaysFeed.innerHTML = '';
+      // Get the last 2 action logs (stripping timestamps)
+      const lastLogs = state.logs.slice(-2);
+      if (lastLogs.length === 0) {
+        recentPlaysFeed.innerHTML = `<div style="font-style: italic; text-align: center; color: var(--text-secondary); padding-top: 4px;">No logs yet</div>`;
+      } else {
+        lastLogs.forEach(log => {
+          const cleanLog = formatLogCompact(log);
+          const logDiv = document.createElement('div');
+          logDiv.innerText = cleanLog;
+          logDiv.style.textOverflow = 'ellipsis';
+          logDiv.style.overflow = 'hidden';
+          logDiv.style.whiteSpace = 'nowrap';
+          recentPlaysFeed.appendChild(logDiv);
+        });
+      }
+    }
+
+    // 8. Render Hand
     renderHand();
   });
 
@@ -473,6 +535,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Rematch Button event binding
+  if (btnPlayerRematch) {
+    btnPlayerRematch.addEventListener('click', () => {
+      socket.emit('rematch', { roomCode });
+    });
+  }
+
+  // Listen for rematch start
+  socket.on('rematch_started', () => {
+    gameOverOverlay.classList.remove('active');
+  });
+
   // Handle game over announcement and standings
   socket.on('game_over_announcement', (data) => {
     gameOverStandings.innerHTML = '';
@@ -516,5 +590,53 @@ document.addEventListener('DOMContentLoaded', () => {
     alert(msg);
     window.location.href = '/index.html';
   });
+
+  // Compact log formatter to show Name: Action (Color & Num)
+  function formatLogCompact(logStr) {
+    let msg = logStr.replace(/^\[\d{2}:\d{2}:\d{2}(?:\s*[APM]{2})?\]\s*/i, '').trim();
+
+    if (msg.includes('played a MULTIPLE of same value:')) {
+      const parts = msg.split('played a MULTIPLE of same value:');
+      const name = parts[0].trim();
+      const cards = parts[1].replace(/\.$/, '').trim();
+      return `${name}: ${cards}`;
+    }
+    if (msg.startsWith('⚡ Jump-In!')) {
+      const match = msg.match(/⚡ Jump-In!\s+(.+?)\s+played/);
+      if (match) return `${match[1].trim()}: Jump-In`;
+    }
+    if (msg.includes(' played ') && !msg.includes('played out of turn')) {
+      const parts = msg.split(' played ');
+      const name = parts[0].trim();
+      const cardInfo = parts[1].replace(/\.$/, '').trim();
+      return `${name}: ${cardInfo}`;
+    }
+    if (msg.includes(' drew ')) {
+      const parts = msg.split(' drew ');
+      const name = parts[0].trim();
+      if (msg.includes('penalty')) {
+        const match = msg.match(/penalty of (\d+)/);
+        return `${name}: Drew +${match ? match[1] : ''}`;
+      }
+      return `${name}: Drew`;
+    }
+    if (msg.includes(' passed their turn')) {
+      const name = msg.split(' passed ')[0].trim();
+      return `${name}: Pass`;
+    }
+    if (msg.includes('shouted UNO')) {
+      const name = msg.replace('📣', '').split(' shouted ')[0].trim();
+      return `${name}: UNO`;
+    }
+    if (msg.includes('went offline')) {
+      const name = msg.split(' went offline')[0].trim();
+      return `${name}: Offline`;
+    }
+    if (msg.includes('reconnected')) {
+      const name = msg.replace('Player ', '').split(' reconnected')[0].trim();
+      return `${name}: Reconnect`;
+    }
+    return msg;
+  }
 
 });

@@ -184,7 +184,8 @@ function broadcastState(room) {
       direction: room.direction,
       status: room.status,
       roomCode: room.roomCode,
-      houseRules: room.houseRules
+      houseRules: room.houseRules,
+      logs: room.logs
     });
   });
 }
@@ -518,6 +519,34 @@ io.on('connection', (socket) => {
     
     callback({ status: 'ok', roomCode: upperCode });
     broadcastState(room);
+  });
+
+  // Rematch Game (Returns room to lobby and clears stats, letting host start a new match)
+  socket.on('rematch', ({ roomCode }) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+
+    room.status = 'lobby';
+    room.discardPile = [];
+    room.currentPlayerIndex = 0;
+    room.direction = 1;
+    room.currentColor = '';
+    room.currentValue = '';
+    room.drawStack = 0;
+    room.calledOutPending = false;
+    room.logs = [];
+
+    // Clear hands and reset stats
+    room.players.forEach(p => {
+      p.cards = [];
+      p.unoDeclared = false;
+      p.hasWon = false;
+      p.rank = null;
+    });
+
+    addLog(room, `🔄 Rematch initiated! Room reset to lobby.`);
+    broadcastState(room);
+    io.to(roomCode).emit('rematch_started');
   });
 
   // Start Game

@@ -29,35 +29,53 @@
       </button>
     </header>
 
-    <!-- Board Sync Info -->
-    <main class="player-board-view">
-      <!-- Pile & Deck Status -->
-      <div class="piles-hud">
-        <div class="pile-box">
-          <span class="label">Discard Pile</span>
-          <div class="discard-preview-container" id="boardDiscardPreview">
-            <!-- Render of current active card -->
-            <div class="uno-card wild">
-              <span class="card-corner top">?</span>
-              <div class="card-center">
-                <span class="card-center-val">?</span>
-              </div>
-              <span class="card-corner bottom">?</span>
+      <!-- Board Sync Info -->
+      <main class="player-board-view">
+        <!-- Pile & Deck Status -->
+        <div class="piles-hud">
+          <!-- Game Log Box (Left Side) -->
+          <div class="logs-hud glass-panel">
+            <span class="label">Log</span>
+            <div id="recentPlaysFeed" class="recent-plays-feed">
+              <!-- Dynamic feed showing what card was recently thrown -->
             </div>
           </div>
-          <div class="color-badge" id="hudColorBadge">ACTIVE COLOR: NONE</div>
-        </div>
 
-        <div class="deck-box">
-          <span class="label">Draw Deck</span>
-          <button class="draw-pile-btn" id="btnDrawCard" disabled>
-            <div class="deck-btn-face">
-              <span>DRAW</span>
-              <span class="stack-badge" id="btnDrawStackBadge" style="display:none;">+2</span>
+          <!-- Discard Pile -->
+          <div class="pile-box">
+            <span class="label">Discard</span>
+            <div class="discard-preview-container" id="boardDiscardPreview">
+              <!-- Render of current active card -->
+              <div class="uno-card wild">
+                <span class="card-corner top">?</span>
+                <div class="card-center">
+                  <span class="card-center-val">?</span>
+                </div>
+                <span class="card-corner bottom">?</span>
+              </div>
             </div>
-          </button>
+            <div class="color-badge" id="hudColorBadge">ACTIVE COLOR: NONE</div>
+          </div>
+
+          <!-- Draw Deck -->
+          <div class="deck-box">
+            <span class="label">Draw</span>
+            <button class="draw-pile-btn" id="btnDrawCard" disabled>
+              <div class="deck-btn-face">
+                <span>DRAW</span>
+                <span class="stack-badge" id="btnDrawStackBadge" style="display:none;">+2</span>
+              </div>
+            </button>
+          </div>
+
+          <!-- Opponents Box (Right Side) -->
+          <div class="opponents-hud glass-panel">
+            <span class="label">Opponents</span>
+            <div id="opponentsList" class="opponents-list">
+              <!-- Dynamically populated list of other players -->
+            </div>
+          </div>
         </div>
-      </div>
 
       <!-- Turn Indicator Bar (Centered & prominent above hand) -->
       <div class="game-status-glow waiting" id="turnIndicator">
@@ -106,7 +124,8 @@
         <div id="gameOverStandings" style="margin: 20px 0; text-align: left; display: flex; flex-direction: column; gap: 10px; max-height: 240px; overflow-y: auto; padding-right: 4px;">
           <!-- Standings loaded dynamically -->
         </div>
-        <button class="btn btn-primary" id="btnExitGameOver" style="width: 100%; margin-top: 10px;">Close Standings</button>
+        <button class="btn btn-primary" id="btnPlayerRematch" style="width: 100%; margin-bottom: 8px;">Rematch</button>
+        <button class="btn btn-secondary" id="btnExitGameOver" style="width: 100%;">Close Standings</button>
       </div>
     </div>
   </div>

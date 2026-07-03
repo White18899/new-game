@@ -81,8 +81,10 @@
 
 .piles-hud {
   display: flex;
-  gap: 40px;
+  gap: 24px;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .pile-box, .deck-box {
@@ -90,6 +92,64 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+}
+
+.opponents-hud, .logs-hud {
+  display: flex;
+  flex-direction: column;
+  width: 130px;
+  height: 165px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--bg-panel);
+}
+
+.opponents-hud .label, .logs-hud .label {
+  text-align: center;
+  font-size: 0.7rem;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  width: 100%;
+  display: block;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+.opponents-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.7rem;
+}
+
+.opponents-list::-webkit-scrollbar {
+  width: 2px;
+}
+
+.opponent-cards-count::after {
+  content: ' cards';
+}
+
+.recent-plays-feed {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  line-height: 1.25;
+}
+
+.recent-plays-feed::-webkit-scrollbar {
+  width: 2px;
 }
 
 .pile-box .label, .deck-box .label {
@@ -407,5 +467,81 @@
   border-color: #ffffff !important;
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
   z-index: 120 !important;
+}
+
+.opponent-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 135px;
+}
+
+/* Mobile responsive layout overrides */
+@media (max-width: 480px) {
+  .piles-hud {
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+  }
+
+  .discard-preview-container, 
+  .discard-preview-container .uno-card,
+  .draw-pile-btn,
+  .logs-hud,
+  .opponents-hud {
+    width: 75px !important;
+    height: 115px !important;
+  }
+
+  /* Make sure labels inside all boxes are tiny and fit */
+  .pile-box .label, 
+  .deck-box .label,
+  .logs-hud .label,
+  .opponents-hud .label {
+    font-size: 0.55rem !important;
+    margin-bottom: 3px !important;
+    padding-bottom: 1px !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .discard-preview-container .uno-card .card-corner {
+    font-size: 13px !important;
+  }
+  .discard-preview-container .uno-card .card-center::before {
+    width: 50px !important;
+    height: 85px !important;
+  }
+  .discard-preview-container .uno-card .card-center-val {
+    font-size: 28px !important;
+  }
+
+  /* Logs Feed styling inside tiny mobile screen */
+  .recent-plays-feed {
+    font-size: 0.52rem !important;
+    gap: 2px !important;
+  }
+
+  /* Opponents list styling inside tiny mobile screen */
+  .opponents-list {
+    gap: 3px !important;
+    font-size: 0.55rem !important;
+  }
+
+  .opponents-list > div {
+    padding: 1px 2px !important;
+  }
+
+  /* Truncate player name very early to fit in the 75px container */
+  .opponent-name-wrapper {
+    max-width: 32px !important;
+    gap: 2px !important;
+  }
+
+  /* Hide the cards text suffix on mobile */
+  .opponent-cards-count::after {
+    content: '' !important;
+  }
 }
 

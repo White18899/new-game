@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const unoAlertOverlay = document.getElementById('unoAlertOverlay');
   const unoShoutTitle = document.getElementById('unoShoutTitle');
   const unoShoutMsg = document.getElementById('unoShoutMsg');
+  const btnHostRematch = document.getElementById('btnHostRematch');
 
   // Rule switches
   const ruleStacking = document.getElementById('ruleStacking');
@@ -471,16 +472,21 @@ document.addEventListener('DOMContentLoaded', () => {
   socket.on('uno_notification', (data) => {
     unoShoutTitle.innerText = 'UNO!';
     unoShoutMsg.innerText = data.message;
+    if (btnHostRematch) btnHostRematch.style.display = 'none';
     unoAlertOverlay.classList.add('active');
     setTimeout(() => {
-      unoAlertOverlay.classList.remove('active');
+      if (unoShoutTitle.innerText === 'UNO!') {
+        unoAlertOverlay.classList.remove('active');
+      }
     }, 3000);
   });
 
   // Dismiss overlay when clicked
   if (unoAlertOverlay) {
     unoAlertOverlay.addEventListener('click', () => {
-      unoAlertOverlay.classList.remove('active');
+      if (unoShoutTitle.innerText !== 'MATCH OVER!') {
+        unoAlertOverlay.classList.remove('active');
+      }
     });
   }
 
@@ -498,10 +504,24 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       msg += `<div style="text-align: center;">Winner: ${data.winner}</div>`;
     }
-    msg += `</div><p style="font-size: 0.7rem; color: #555; margin-top: 16px; text-transform: uppercase; text-align: center;">Click anywhere to close</p>`;
+    msg += `</div>`;
     
     unoShoutMsg.innerHTML = msg;
+    if (btnHostRematch) btnHostRematch.style.display = 'block';
     unoAlertOverlay.classList.add('active');
+  });
+
+  // Rematch Button event binding
+  if (btnHostRematch) {
+    btnHostRematch.addEventListener('click', (e) => {
+      e.stopPropagation();
+      socket.emit('rematch', { roomCode });
+    });
+  }
+
+  // Listen for rematch start
+  socket.on('rematch_started', () => {
+    unoAlertOverlay.classList.remove('active');
   });
 
   // Standard Alerts
