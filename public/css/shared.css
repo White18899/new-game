@@ -1,0 +1,256 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+
+:root {
+  --bg-dark: #090a0f;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --border-light: rgba(255, 255, 255, 0.1);
+  --text-primary: #f8f9fa;
+  --text-secondary: #a0aec0;
+  
+  /* Neon Uno Palette */
+  --clr-red: #ff3366;
+  --clr-blue: #00b4d8;
+  --clr-green: #2ec4b6;
+  --clr-yellow: #ffb703;
+  --clr-wild: linear-gradient(135deg, #ff3366, #00b4d8, #2ec4b6, #ffb703);
+  --clr-wild-glow: rgba(255, 255, 255, 0.2);
+
+  --font-display: 'Outfit', sans-serif;
+  --font-sans: 'Space Grotesk', sans-serif;
+
+  --shadow-glow-red: 0 0 15px rgba(255, 51, 102, 0.4);
+  --shadow-glow-blue: 0 0 15px rgba(0, 180, 216, 0.4);
+  --shadow-glow-green: 0 0 15px rgba(46, 196, 182, 0.4);
+  --shadow-glow-yellow: 0 0 15px rgba(255, 183, 3, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, #151824 0%, var(--bg-dark) 100%);
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Glass Panels */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Premium Buttons */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Card Styling */
+.uno-card {
+  position: relative;
+  width: 90px;
+  height: 140px;
+  border-radius: 10px;
+  background-color: #1a1a24;
+  border: 4px solid #fff;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
+  flex-shrink: 0;
+}
+
+/* Glow Border matching card color */
+.uno-card.red { border-color: #fff; background-color: var(--clr-red); box-shadow: var(--shadow-glow-red); }
+.uno-card.blue { border-color: #fff; background-color: var(--clr-blue); box-shadow: var(--shadow-glow-blue); }
+.uno-card.green { border-color: #fff; background-color: var(--clr-green); box-shadow: var(--shadow-glow-green); }
+.uno-card.yellow { border-color: #fff; background-color: var(--clr-yellow); box-shadow: var(--shadow-glow-yellow); }
+.uno-card.wild, .uno-card.wild4 {
+  border-color: #fff;
+  background: var(--clr-wild);
+  box-shadow: 0 0 15px rgba(255,255,255,0.25);
+}
+/* For custom colors defined by hex */
+.uno-card.custom-colored {
+  border-color: #fff;
+}
+
+/* Card Layout Elements */
+.card-corner {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  line-height: 1;
+}
+.card-corner.bottom {
+  transform: rotate(180deg);
+  align-self: flex-end;
+}
+
+.card-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 75%;
+  height: 65%;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 2px 5px rgba(255,255,255,0.2);
+  transform: translate(-50%, -50%) rotate(-15deg);
+}
+
+.card-center-val {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 38px;
+  color: #fff;
+  text-shadow: 2px 3px 0px rgba(0,0,0,0.3);
+  transform: rotate(15deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Small adjustments for longer texts in custom cards */
+.uno-card.custom-card .card-center-val {
+  font-size: 26px;
+}
+.uno-card.custom-card .card-corner {
+  font-size: 12px;
+}
+
+/* Icon Representation for skips/reverses/draws */
+.icon-skip::before { content: '🚫'; font-size: 28px; }
+.icon-reverse::before { content: '🔄'; font-size: 28px; }
+.icon-draw2::before { content: '+2'; font-size: 28px; }
+.icon-wild::before { content: 'W'; font-size: 32px; }
+.icon-wild4::before { content: '+4'; font-size: 32px; }
+
+/* Micro-animations */
+.uno-card:hover {
+  transform: translateY(-15px) rotate(2deg) scale(1.05);
+  z-index: 100 !important;
+}
+
+/* Custom overlay for card details */
+.card-details-tooltip {
+  position: absolute;
+  bottom: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(10, 10, 15, 0.9);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  color: #fff;
+  z-index: 200;
+}
+.uno-card:hover .card-details-tooltip {
+  opacity: 1;
+}
+
+/* Card Throw Animation */
+@keyframes throwCard {
+  0% {
+    transform: translate(var(--start-x, 0), var(--start-y, 400px)) rotate(var(--start-rot, 0deg)) scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(var(--end-x, 0), var(--end-y, 0)) rotate(var(--end-rot, 0deg)) scale(1);
+    opacity: 1;
+  }
+}
+
+.thrown-card {
+  animation: throwCard 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Deck Draw Animation */
+@keyframes drawCard {
+  0% {
+    transform: translate(var(--deck-x, 0), var(--deck-y, -300px)) rotate(0deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(0, 0) rotate(var(--hand-rot, 0deg));
+    opacity: 1;
+  }
+}
+
+.drawing-card {
+  animation: drawCard 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}

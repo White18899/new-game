@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Networked Uno - Lobby</title>
+  <link rel="stylesheet" href="css/shared.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    
+    .lobby-container {
+      width: 100%;
+      max-width: 480px;
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+      margin: 16px;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 3rem;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--clr-red) 0%, var(--clr-yellow) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 30px;
+    }
+
+    .choice-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .join-form {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 24px;
+      text-align: left;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input {
+      font-family: var(--font-sans);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-light);
+      padding: 14px 16px;
+      border-radius: 12px;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    input:focus {
+      border-color: #3b82f6;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+    }
+
+    /* Avatar Grid selector */
+    .avatar-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .avatar-item {
+      font-size: 1.6rem;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border-light);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .avatar-item:hover {
+      background: rgba(255,255,255,0.1);
+      transform: scale(1.1);
+    }
+
+    .avatar-item.selected {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: #3b82f6;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+      transform: scale(1.05);
+    }
+
+    .btn-back {
+      margin-top: 10px;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      align-self: center;
+    }
+    .btn-back:hover {
+      color: white;
+      text-decoration: underline;
+    }
+
+    .error-msg {
+      color: var(--clr-red);
+      font-size: 0.85rem;
+      margin-top: -10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glass-panel lobby-container">
+    <h1>UNO CONNECT</h1>
+    <p class="subtitle">Real-time local network multiplayer</p>
+    
+    <div class="choice-group" id="choiceGroup">
+      <button class="btn btn-primary" id="btnHostChoice">Host Central Table</button>
+      <button class="btn btn-secondary" id="btnJoinChoice">Join Game Board</button>
+    </div>
+
+    <div class="join-form" id="joinForm">
+      <div class="form-group">
+        <label for="playerName">Your Name</label>
+        <input type="text" id="playerName" placeholder="Enter name (e.g. Alice)" maxlength="12">
+      </div>
+
+      <div class="form-group">
+        <label for="roomCode">Room Code</label>
+        <input type="text" id="roomCode" placeholder="Enter 4-letter host code" maxlength="4" style="text-transform: uppercase;">
+      </div>
+
+      <div class="form-group">
+        <label>Choose Avatar</label>
+        <div class="avatar-grid" id="avatarGrid">
+          <!-- Avatars populated by JS -->
+        </div>
+      </div>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <button class="btn btn-primary" id="btnSubmitJoin">Join Room</button>
+      <button class="btn-back" id="btnBack">← Choose another option</button>
+    </div>
+  </div>
+
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const avatars = ['🦖', '🦊', '🐯', '🦁', '🐼', '🐨', '🦄', '🐙', '👽', '🤖', '👻', '🦥'];
+    let selectedAvatar = avatars[0];
+
+    const choiceGroup = document.getElementById('choiceGroup');
+    const joinForm = document.getElementById('joinForm');
+    const avatarGrid = document.getElementById('avatarGrid');
+    const errorMsg = document.getElementById('errorMsg');
+
+    // Populate Avatars
+    avatars.forEach((av, i) => {
+      const div = document.createElement('div');
+      div.className = `avatar-item ${i === 0 ? 'selected' : ''}`;
+      div.innerText = av;
+      div.addEventListener('click', () => {
+        document.querySelectorAll('.avatar-item').forEach(item => item.classList.remove('selected'));
+        div.classList.add('selected');
+        selectedAvatar = av;
+      });
+      avatarGrid.appendChild(div);
+    });
+
+    // Option Toggles
+    document.getElementById('btnHostChoice').addEventListener('click', () => {
+      // Establish connection to initialize host
+      const socket = io();
+      socket.on('connect', () => {
+        socket.emit('create_room', (res) => {
+          if (res.status === 'ok') {
+            sessionStorage.setItem('uno_roomCode', res.roomCode);
+            sessionStorage.setItem('uno_isHost', 'true');
+            window.location.href = '/host.html';
+          }
+        });
+      });
+    });
+
+    document.getElementById('btnJoinChoice').addEventListener('click', () => {
+      choiceGroup.style.display = 'none';
+      joinForm.style.display = 'flex';
+      errorMsg.style.display = 'none';
+    });
+
+    document.getElementById('btnBack').addEventListener('click', () => {
+      choiceGroup.style.display = 'flex';
+      joinForm.style.display = 'none';
+    });
+
+    // Form Submit Join
+    document.getElementById('btnSubmitJoin').addEventListener('click', () => {
+      const name = document.getElementById('playerName').value.trim();
+      const code = document.getElementById('roomCode').value.trim().toUpperCase();
+
+      if (!name) {
+        showError('Please enter your name.');
+        return;
+      }
+      if (!code || code.length !== 4) {
+        showError('Please enter a valid 4-letter room code.');
+        return;
+      }
+
+      // Check room and join using temporary socket
+      const socket = io();
+      socket.on('connect', () => {
+        socket.emit('join_room', { roomCode: code, playerName: name, avatar: selectedAvatar }, (res) => {
+          if (res.status === 'ok') {
+            sessionStorage.setItem('uno_roomCode', code);
+            sessionStorage.setItem('uno_playerName', name);
+            sessionStorage.setItem('uno_playerAvatar', selectedAvatar);
+            sessionStorage.setItem('uno_isHost', 'false');
+            window.location.href = '/player.html';
+          } else {
+            showError(res.message);
+            socket.disconnect();
+          }
+        });
+      });
+    });
+
+    function showError(msg) {
+      errorMsg.innerText = msg;
+      errorMsg.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
