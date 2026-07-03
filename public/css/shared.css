@@ -229,4 +229,19 @@ body {
   animation: drawCard 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
+/* Creator Credits Footer Float */
+.creator-credits {
+  position: fixed;
+  bottom: 12px;
+  right: 16px;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 9999;
+  pointer-events: none;
+}
+
 
