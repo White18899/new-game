@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Uno Connect - Player Hand</title>
+  <link rel="stylesheet" href="css/shared.css">
+  <link rel="stylesheet" href="css/player.css">
+</head>
+<body>
+
+  <div class="player-app">
+    <!-- Top HUD Info -->
+    <header class="player-hud glass-panel">
+      <div class="user-profile">
+        <span class="avatar" id="hudAvatar">🦖</span>
+        <div>
+          <h2 id="hudName">Player Name</h2>
+          <span class="room-tag">Room: <span id="hudRoom">----</span></span>
+        </div>
+      </div>
+      <div class="game-status-glow" id="turnIndicator">
+        Connecting...
+      </div>
+    </header>
+
+    <!-- Board Sync Info -->
+    <main class="player-board-view">
+      <!-- Pile & Deck Status -->
+      <div class="piles-hud">
+        <div class="pile-box">
+          <span class="label">Discard Pile</span>
+          <div class="discard-preview-container" id="boardDiscardPreview">
+            <!-- Render of current active card -->
+            <div class="uno-card wild">
+              <span class="card-corner top">?</span>
+              <div class="card-center">
+                <span class="card-center-val">?</span>
+              </div>
+              <span class="card-corner bottom">?</span>
+            </div>
+          </div>
+          <div class="color-badge" id="hudColorBadge">ACTIVE COLOR: NONE</div>
+        </div>
+
+        <div class="deck-box">
+          <span class="label">Draw Deck</span>
+          <button class="draw-pile-btn" id="btnDrawCard" disabled>
+            <div class="deck-btn-face">
+              <span>DRAW</span>
+              <span class="stack-badge" id="btnDrawStackBadge" style="display:none;">+2</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Action Alerts -->
+      <div class="action-alert-bar" id="actionAlertBar" style="display: none;">
+        ⚡ Stack Active! Play a draw card or click Draw to take +4.
+      </div>
+    </main>
+
+    <!-- Interactions & Shouts -->
+    <div class="interaction-hud">
+      <button class="btn btn-uno" id="btnUno">UNO!</button>
+      <button class="btn btn-callout" id="btnCallOut" style="display: none;">CALL OUT!</button>
+    </div>
+
+    <!-- Scrollable Hand of Cards -->
+    <footer class="player-hand-container">
+      <div class="player-hand" id="playerHand">
+        <!-- Player cards loaded dynamically -->
+      </div>
+    </footer>
+
+    <!-- Wild Color Picker Modal Overlay -->
+    <div class="color-picker-overlay" id="colorPickerOverlay">
+      <div class="color-picker-card glass-panel">
+        <h3>Choose Active Color</h3>
+        <p>You played a Wild card. Select the next color:</p>
+        <div class="color-picker-grid">
+          <button class="color-picker-btn red" data-color="red"></button>
+          <button class="color-picker-btn blue" data-color="blue"></button>
+          <button class="color-picker-btn green" data-color="green"></button>
+          <button class="color-picker-btn yellow" data-color="yellow"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Main Player Logic -->
+  <script src="js/player.js"></script>
+</body>
+</html>
