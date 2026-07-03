@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uno Connect - Table Board</title>
+  <link rel="stylesheet" href="css/shared.css">
+  <link rel="stylesheet" href="css/host.css">
+</head>
+<body>
+
+  <div class="host-app">
+    <!-- Top Bar -->
+    <header class="host-header glass-panel">
+      <div class="logo">UNO CONNECT <span>TABLE BOARD</span></div>
+      <div class="connection-info">
+        <div>Connect via: <span id="connectUrl" class="highlight">http://...</span></div>
+        <div>Room Code: <span id="roomCodeVal" class="room-code-glow">----</span></div>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="host-content">
+      <!-- Lobby Panel -->
+      <section id="lobbyPanel" class="lobby-panel glass-panel">
+        <div class="lobby-main">
+          <h2>Game Lobby</h2>
+          <p class="section-desc">Waiting for players to connect...</p>
+          
+          <div class="lobby-players-container">
+            <h3>Connected Players (<span id="playerCount">0</span>)</h3>
+            <div class="lobby-players-grid" id="lobbyPlayersGrid">
+              <!-- Dynamically populated players -->
+              <div class="waiting-prompt">No players connected yet. Scan QR code or enter code on your device.</div>
+            </div>
+          </div>
+          
+          <div class="action-row">
+            <button class="btn btn-primary" id="btnStartGame" disabled>Start Uno Game</button>
+          </div>
+        </div>
+
+        <!-- Rules & Card Creator Sidebar -->
+        <div class="lobby-sidebar">
+          <!-- House Rules Config -->
+          <div class="sidebar-block glass-panel">
+            <h3>House Rules Config</h3>
+            <div class="rules-list">
+              <label class="rule-switch">
+                <input type="checkbox" id="ruleStacking" checked>
+                <div class="rule-details">
+                  <span class="rule-title">Stacking (+2 / +4)</span>
+                  <span class="rule-desc">Stack draw cards to pass penalty.</span>
+                </div>
+              </label>
+              <label class="rule-switch">
+                <input type="checkbox" id="ruleDrawMatch">
+                <div class="rule-details">
+                  <span class="rule-title">Draw to Match</span>
+                  <span class="rule-desc">Keep drawing until you can play.</span>
+                </div>
+              </label>
+              <label class="rule-switch">
+                <input type="checkbox" id="ruleJumpIn">
+                <div class="rule-details">
+                  <span class="rule-title">Jump-In Rule</span>
+                  <span class="rule-desc">Play out of turn with exact card match.</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Custom Rule Card Creator -->
+          <div class="sidebar-block glass-panel">
+            <h3>Custom Rule Card Builder</h3>
+            <p class="block-desc">Create custom cards to shuffle into the deck.</p>
+            
+            <div class="creator-preview-container">
+              <div class="uno-card wild custom-card" id="cardPreview">
+                <span class="card-corner top" id="previewCornerVal">?</span>
+                <div class="card-center">
+                  <span class="card-center-val" id="previewCenterVal">?</span>
+                </div>
+                <span class="card-corner bottom" id="previewCornerVal2">?</span>
+              </div>
+
+              <div class="creator-form">
+                <div class="form-group">
+                  <label for="custName">Card Name</label>
+                  <input type="text" id="custName" placeholder="e.g. Draw 5 Skip" value="Draw 5 Skip">
+                </div>
+                <div class="form-group">
+                  <label for="custSymbol">Symbol (Corner/Center)</label>
+                  <input type="text" id="custSymbol" placeholder="e.g. +5" value="+5" maxlength="3">
+                </div>
+                <div class="form-group">
+                  <label for="custColor">Card Color</label>
+                  <select id="custColor">
+                    <option value="wild" selected>🌈 Wild / Customizable</option>
+                    <option value="red">🔴 Red</option>
+                    <option value="blue">🔵 Blue</option>
+                    <option value="green">🟢 Green</option>
+                    <option value="yellow">🟡 Yellow</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Card Effects</label>
+                  <div class="effects-toggles">
+                    <label><input type="checkbox" id="effectDraw" checked> Draw Penalty</label>
+                    <input type="number" id="effectDrawQty" value="5" min="1" max="10" style="width: 60px; padding: 4px;">
+                  </div>
+                  <div class="effects-toggles">
+                    <label><input type="checkbox" id="effectSkip" checked> Skip Next Player</label>
+                  </div>
+                  <div class="effects-toggles">
+                    <label><input type="checkbox" id="effectReverse"> Reverse Direction</label>
+                  </div>
+                  <div class="effects-toggles">
+                    <label><input type="checkbox" id="effectSwap"> Swap Hands with Next</label>
+                  </div>
+                  <div class="effects-toggles">
+                    <label><input type="checkbox" id="effectDrawMatch"> Draw-Till-Color</label>
+                  </div>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btnAddCustomCard" style="width: 100%; margin-top: 10px;">Add Card to Deck</button>
+              </div>
+            </div>
+
+            <!-- Custom Card Deck counter -->
+            <div class="custom-card-counter">
+              Custom Cards Added: <span id="customCardCountVal" class="highlight">0</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Game Board Panel (Hidden by default) -->
+      <section id="gamePanel" class="game-panel" style="display: none;">
+        <div class="table-container">
+          <!-- Circular Uno Table -->
+          <div class="uno-table" id="unoTable">
+            <!-- Center Pile area -->
+            <div class="table-center">
+              <!-- Direction Indicator Arrow Rings -->
+              <div class="direction-indicator" id="directionIndicator"></div>
+              
+              <!-- Stack of cards on table -->
+              <div class="discard-stack-holder" id="discardStack">
+                <!-- Stack cards populated via JS -->
+              </div>
+              
+              <!-- Draw deck visual stack -->
+              <div class="draw-deck-holder">
+                <div class="deck-card-back"></div>
+                <div class="deck-card-back"></div>
+                <div class="deck-card-back"></div>
+              </div>
+            </div>
+
+            <!-- Players placed radially around table in JS -->
+          </div>
+        </div>
+
+        <!-- Sidebar for game activity and custom deck -->
+        <div class="game-sidebar glass-panel">
+          <div class="active-rule-glow" id="activeColorIndicator">
+            Current Color: <span id="activeColorText">NONE</span>
+          </div>
+
+          <div class="penalty-stack-indicator" id="penaltyStackIndicator" style="display: none;">
+            ⚠️ Cumulative Stacking penalty: <span id="penaltyStackCount" class="highlight">+0</span> cards!
+          </div>
+
+          <div class="game-logs-container">
+            <h3>Table Game Log</h3>
+            <div class="game-logs" id="gameLogs">
+              <!-- Live events appended here -->
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Overlay Alerts -->
+    <div class="uno-shout-overlay" id="unoAlertOverlay">
+      <div class="uno-shout-card glass-panel">
+        <h2 id="unoShoutTitle">UNO!</h2>
+        <p id="unoShoutMsg">Player 1 is down to 1 card!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Main Host Logic -->
+  <script src="js/host.js"></script>
+</body>
+</html>
