@@ -19,9 +19,14 @@
           <span class="room-tag">Room: <span id="hudRoom">----</span></span>
         </div>
       </div>
-      <div class="game-status-glow" id="turnIndicator">
-        Connecting...
-      </div>
+      <button class="btn btn-secondary btn-sm" id="btnMuteSound" style="font-size: 0.75rem; padding: 4px 8px; background: transparent; border: 1px solid #ffffff; color: #ffffff; display: inline-flex; align-items: center; gap: 6px;">
+        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        Audio: Off
+      </button>
     </header>
 
     <!-- Board Sync Info -->
@@ -54,18 +59,24 @@
         </div>
       </div>
 
+      <!-- Turn Indicator Bar (Centered & prominent above hand) -->
+      <div class="game-status-glow waiting" id="turnIndicator">
+        Connecting...
+      </div>
+
       <!-- Action Alerts -->
       <div class="action-alert-bar" id="actionAlertBar" style="display: none;">
         ⚡ Stack Active! Play a draw card or click Draw to take +4.
       </div>
-    </main>
 
-    <!-- Interactions & Shouts -->
-    <div class="interaction-hud">
-      <button class="btn btn-primary" id="btnPlaySelected" style="display: none;">Throw Card</button>
-      <button class="btn btn-uno" id="btnUno">UNO!</button>
-      <button class="btn btn-callout" id="btnCallOut" style="display: none;">CALL OUT!</button>
-    </div>
+      <!-- Interactions & Shouts -->
+      <div class="interaction-hud">
+        <button class="btn btn-primary" id="btnPlaySelected" style="display: none;">Throw Card</button>
+        <button class="btn btn-secondary" id="btnPassTurn" style="display: none; background: #222222; border-color: #555555; color: #ffffff;">Pass Turn</button>
+        <button class="btn btn-uno" id="btnUno">UNO!</button>
+        <button class="btn btn-callout" id="btnCallOut" style="display: none;">CALL OUT!</button>
+      </div>
+    </main>
 
     <!-- Scrollable Hand of Cards -->
     <footer class="player-hand-container">
@@ -91,6 +102,8 @@
 
   <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Sound Synthesizer -->
+  <script src="js/sound.js"></script>
   <!-- Main Player Logic -->
   <script src="js/player.js"></script>
   <!-- Credits Floater -->

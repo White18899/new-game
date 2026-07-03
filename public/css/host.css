@@ -58,24 +58,52 @@
   min-height: 0;
 }
 
-/* Lobby */
+/* Lobby Dashboard Columns */
 .lobby-panel {
   flex: 1;
   display: flex;
+  gap: 20px;
   min-height: 0;
-  overflow: hidden;
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  background: var(--bg-panel);
+  align-items: stretch;
 }
 
 .lobby-main {
-  flex: 2;
-  padding: 24px;
+  flex: 1.15;
+  justify-content: space-between;
+}
+
+.lobby-rules {
+  flex: 1;
+}
+
+.lobby-creator {
+  flex: 1.35;
+}
+
+.lobby-main, .lobby-rules, .lobby-creator {
+  padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  border-right: 1px solid var(--border-light);
+  gap: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.lobby-main h2, .lobby-rules h2, .lobby-creator h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.5px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 8px;
+}
+
+.section-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: -8px;
 }
 
 .lobby-players-container {
@@ -87,8 +115,8 @@
 .lobby-players-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .waiting-prompt {
@@ -126,35 +154,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
-}
-
-.lobby-sidebar {
-  flex: 1.2;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  overflow-y: auto;
-  background: #050505;
-}
-
-.sidebar-block {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  border: 1px solid var(--border-light);
-  border-radius: 6px;
-  background: #000000;
-}
-
-.sidebar-block h3 {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--border-light);
-  padding-bottom: 6px;
 }
 
 .rules-list {
@@ -586,17 +585,15 @@
   }
   
   .lobby-panel {
+    display: flex;
     flex-direction: column;
     overflow-y: auto;
   }
   
-  .lobby-main {
-    border-right: none;
-    border-bottom: 1px solid var(--border-light);
-  }
-  
-  .lobby-sidebar {
-    background: transparent;
+  .lobby-main, .lobby-rules, .lobby-creator {
+    flex: none;
+    height: auto;
+    min-height: auto;
     overflow-y: visible;
   }
   

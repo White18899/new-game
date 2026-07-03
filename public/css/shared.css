@@ -32,6 +32,22 @@ body {
   overflow: hidden;
 }
 
+/* Global Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+p, label, input, select, textarea {
+  font-family: var(--font-sans);
+}
+
+span, button {
+  font-family: inherit;
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar {
   width: 4px;
@@ -115,11 +131,50 @@ body {
   flex-shrink: 0;
 }
 
-/* Flat Card Colors */
-.uno-card.red { background-color: var(--clr-red); }
-.uno-card.blue { background-color: var(--clr-blue); }
-.uno-card.green { background-color: var(--clr-green); }
-.uno-card.yellow { background-color: var(--clr-yellow); }
+/* Card inner border outline for tactile finish */
+.uno-card::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Diagonal double-stripe accent watermark */
+.uno-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    transparent 0%, 
+    transparent 28%, 
+    rgba(255, 255, 255, 0.04) 28%, 
+    rgba(255, 255, 255, 0.04) 52%, 
+    transparent 52%, 
+    transparent 58%, 
+    rgba(255, 255, 255, 0.02) 58%, 
+    rgba(255, 255, 255, 0.02) 63%, 
+    transparent 63%, 
+    transparent 100%
+  );
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Flat Card Colors with subtle gradients */
+.uno-card.red { background: linear-gradient(135deg, #d32f2f 0%, var(--clr-red) 100%); }
+.uno-card.blue { background: linear-gradient(135deg, #1976d2 0%, var(--clr-blue) 100%); }
+.uno-card.green { background: linear-gradient(135deg, #388e3c 0%, var(--clr-green) 100%); }
+.uno-card.yellow { background: linear-gradient(135deg, #fbc02d 0%, var(--clr-yellow) 100%); }
 
 /* Conic splits matching the uploaded image quadrants */
 .uno-card.wild, .uno-card.wild4 {
@@ -137,6 +192,7 @@ body {
   font-size: 14px;
   color: #ffffff;
   line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 .card-corner.bottom {
   transform: rotate(180deg);
@@ -159,6 +215,20 @@ body {
   box-shadow: none;
 }
 
+/* Tilted central oval frame */
+.card-center::before {
+  content: '';
+  position: absolute;
+  width: 68%;
+  height: 75%;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50% / 50%;
+  transform: rotate(-20deg);
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.02);
+  z-index: 1;
+}
+
 .card-center-val {
   font-family: var(--font-display);
   font-weight: 900;
@@ -167,6 +237,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.45);
 }
 
 
@@ -242,6 +314,32 @@ body {
   text-transform: uppercase;
   z-index: 9999;
   pointer-events: none;
+}
+
+/* Premium Text Shimmer Animation */
+.text-shimmer {
+  background: linear-gradient(
+    120deg,
+    #ffffff 15%,
+    #555555 35%,
+    #ffffff 50%,
+    #555555 65%,
+    #ffffff 85%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerSweep 2.2s linear infinite;
+  display: inline-block;
+}
+
+@keyframes shimmerSweep {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
 }
 
 

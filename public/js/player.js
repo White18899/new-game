@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnUno = document.getElementById('btnUno');
   const btnCallOut = document.getElementById('btnCallOut');
   const btnPlaySelected = document.getElementById('btnPlaySelected');
+  const btnPassTurn = document.getElementById('btnPassTurn');
   const playerHand = document.getElementById('playerHand');
   const colorPickerOverlay = document.getElementById('colorPickerOverlay');
 
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let myHand = [];
   let isMyTurn = false;
+  let hasDrawnThisTurn = false;
   let activeColor = '';
   let activeValue = '';
   let activeDrawStack = 0;
@@ -43,6 +45,32 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedCards = [];
   let pendingWildCardIds = null;
   let activeHouseRules = {};
+  let lastTopCardId = null;
+  let lastMyTurnState = false;
+  let lastMyHandCount = 0;
+
+  // Sound Controller
+  const btnMuteSound = document.getElementById('btnMuteSound');
+  if (btnMuteSound) {
+    btnMuteSound.addEventListener('click', () => {
+      const isMuted = window.gameSound.toggleMute();
+      btnMuteSound.innerHTML = isMuted ? `
+        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        Audio: Off
+      ` : `
+        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        Audio: On
+      `;
+      btnMuteSound.classList.toggle('active', !isMuted);
+    });
+  }
 
   // Re-join the room with this socket
   socket.on('connect', () => {
@@ -63,6 +91,29 @@ document.addEventListener('DOMContentLoaded', () => {
     activeValue = state.currentValue;
     activeDrawStack = state.drawStack;
     activeHouseRules = state.houseRules || {};
+
+    // 0. Sound Effects & Triggers
+    if (isMyTurn && !lastMyTurnState) {
+      window.gameSound.playTurnAlert();
+      hasDrawnThisTurn = false; // Reset draw state on new turn
+    }
+    lastMyTurnState = isMyTurn;
+
+    if (myHand.length > lastMyHandCount) {
+      if (lastMyHandCount > 0) {
+        window.gameSound.playDraw();
+      }
+    }
+    lastMyHandCount = myHand.length;
+
+    if (state.topCard && state.topCard.id !== lastTopCardId) {
+      if (lastTopCardId !== null) {
+        window.gameSound.playThrow();
+      }
+      lastTopCardId = state.topCard.id;
+    } else if (!state.topCard) {
+      lastTopCardId = null;
+    }
 
     // 1. Turn HUD Indicator
     if (state.status === 'lobby') {
@@ -96,11 +147,17 @@ document.addEventListener('DOMContentLoaded', () => {
       btnDrawStackBadge.style.display = 'none';
     }
 
-    // 4. Draw button accessibility
-    if (state.status === 'playing' && isMyTurn) {
+    // 4. Draw & Pass buttons accessibility
+    if (state.status === 'playing' && isMyTurn && !hasDrawnThisTurn) {
       btnDrawCard.disabled = false;
     } else {
       btnDrawCard.disabled = true;
+    }
+
+    if (state.status === 'playing' && isMyTurn && hasDrawnThisTurn) {
+      btnPassTurn.style.display = 'inline-block';
+    } else {
+      btnPassTurn.style.display = 'none';
     }
 
     // 5. Check if anyone can be Called Out
@@ -305,8 +362,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Draw Card Click
   btnDrawCard.addEventListener('click', () => {
-    if (!isMyTurn) return;
+    if (!isMyTurn || hasDrawnThisTurn) return;
     socket.emit('draw_card', { roomCode });
+    window.gameSound.playDraw();
+    hasDrawnThisTurn = true;
+  });
+
+  // Pass Turn Click
+  btnPassTurn.addEventListener('click', () => {
+    if (!isMyTurn || !hasDrawnThisTurn) return;
+    socket.emit('pass_turn', { roomCode });
+    hasDrawnThisTurn = false;
+    btnPassTurn.style.display = 'none';
   });
 
   // Declare UNO Shout click
@@ -391,8 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Catch notification events from room
   socket.on('uno_notification', (data) => {
-    // Show user physical warning toast if they wish, 
-    // but the central host screen will display a beautiful fullscreen flash of this!
+    window.gameSound.playUnoFanfare();
   });
 
   socket.on('error_message', (msg) => {

@@ -86,6 +86,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let localCustomCardsCount = 0;
   let currentTopCard = null;
+  let lastTopCardId = null;
+  let lastTotalCards = 0;
+  let lastLogLength = 0;
+
+  // Sound Controller
+  const btnMuteSound = document.getElementById('btnMuteSound');
+  if (btnMuteSound) {
+    btnMuteSound.addEventListener('click', () => {
+      const isMuted = window.gameSound.toggleMute();
+      btnMuteSound.innerHTML = isMuted ? `
+        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        Audio: Off
+      ` : `
+        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+          <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        Audio: On
+      `;
+      btnMuteSound.classList.toggle('active', !isMuted);
+    });
+  }
 
   // Real-time Preview updates
   function updatePreview() {
@@ -194,6 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
       lobbyPanel.style.display = 'flex';
       gamePanel.style.display = 'none';
       renderLobbyPlayers(state.players);
+      lastTopCardId = null;
+      lastTotalCards = 0;
+      lastLogLength = 0;
     } else {
       lobbyPanel.style.display = 'none';
       gamePanel.style.display = 'flex';
@@ -232,6 +261,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Logs
     renderLogs(state.logs);
 
+    // Check logs for Uno calls
+    if (state.logs && state.logs.length > lastLogLength) {
+      const newLogs = state.logs.slice(lastLogLength);
+      newLogs.forEach(log => {
+        const lower = log.toLowerCase();
+        if (lower.includes('shouted uno') || lower.includes('uno!')) {
+          window.gameSound.playUnoFanfare();
+        }
+      });
+      lastLogLength = state.logs.length;
+    } else if (!state.logs) {
+      lastLogLength = 0;
+    }
+
     // 2. Active Color indicators
     activeColorIndicator.className = 'active-rule-glow ' + state.currentColor;
     activeColorText.innerText = state.currentColor.toUpperCase();
@@ -242,6 +285,24 @@ document.addEventListener('DOMContentLoaded', () => {
       penaltyStackCount.innerText = `+${state.drawStack}`;
     } else {
       penaltyStackIndicator.style.display = 'none';
+    }
+
+    // 4. Play and Draw Sound triggers
+    const totalCards = state.players.reduce((sum, p) => sum + p.cardCount, 0);
+    if (totalCards > lastTotalCards) {
+      if (lastTotalCards > 0) {
+        window.gameSound.playDraw();
+      }
+    }
+    lastTotalCards = totalCards;
+
+    const pile = state.discardPile || [];
+    const topCard = pile[0];
+    if (topCard && topCard.id !== lastTopCardId) {
+      if (lastTopCardId !== null) {
+        window.gameSound.playThrow();
+      }
+      lastTopCardId = topCard.id;
     }
 
     // 4. Direction

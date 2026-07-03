@@ -12,8 +12,16 @@
   <div class="host-app">
     <!-- Top Bar -->
     <header class="host-header glass-panel">
-      <div class="logo">UNO CONNECT <span>TABLE BOARD</span></div>
+      <div class="logo"><span class="text-shimmer">UNO CONNECT</span> <span>TABLE BOARD</span></div>
       <div class="connection-info">
+        <button class="btn btn-secondary btn-sm" id="btnMuteSound" style="font-size: 0.75rem; padding: 4px 10px; margin-right: 12px; background: transparent; border: 1px solid #ffffff; color: #ffffff; display: inline-flex; align-items: center; gap: 6px;">
+          <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+          Audio: Off
+        </button>
         <div>Connect via: <span id="connectUrl" class="highlight">http://...</span></div>
         <div>Room Code: <span id="roomCodeVal" class="room-code-glow">----</span></div>
       </div>
@@ -22,8 +30,10 @@
     <!-- Main Workspace -->
     <main class="host-content">
       <!-- Lobby Panel -->
-      <section id="lobbyPanel" class="lobby-panel glass-panel">
-        <div class="lobby-main">
+      <section id="lobbyPanel" class="lobby-panel">
+        
+        <!-- Column 1: Connected Players -->
+        <div class="lobby-main glass-panel">
           <h2>Game Lobby</h2>
           <p class="section-desc">Waiting for players to connect...</p>
           
@@ -40,103 +50,102 @@
           </div>
         </div>
 
-        <!-- Rules & Card Creator Sidebar -->
-        <div class="lobby-sidebar">
-          <!-- House Rules Config -->
-          <div class="sidebar-block glass-panel">
-            <h3>House Rules Config</h3>
-            <div class="rules-list">
-              <label class="rule-switch">
-                <input type="checkbox" id="ruleStacking" checked>
-                <div class="rule-details">
-                  <span class="rule-title">Stacking (+2 / +4)</span>
-                  <span class="rule-desc">Stack draw cards to pass penalty.</span>
+        <!-- Column 2: House Rules Config -->
+        <div class="lobby-rules glass-panel">
+          <h2>House Rules Config</h2>
+          <p class="section-desc">Configure active room rules.</p>
+          
+          <div class="rules-list">
+            <label class="rule-switch">
+              <input type="checkbox" id="ruleStacking" checked>
+              <div class="rule-details">
+                <span class="rule-title">Stacking (+2 / +4)</span>
+                <span class="rule-desc">Stack draw cards to pass penalty.</span>
+              </div>
+            </label>
+            <label class="rule-switch">
+              <input type="checkbox" id="ruleDrawMatch">
+              <div class="rule-details">
+                <span class="rule-title">Draw to Match</span>
+                <span class="rule-desc">Keep drawing until you can play.</span>
+              </div>
+            </label>
+            <label class="rule-switch">
+              <input type="checkbox" id="ruleJumpIn">
+              <div class="rule-details">
+                <span class="rule-title">Jump-In Rule</span>
+                <span class="rule-desc">Play out of turn with exact card match.</span>
+              </div>
+            </label>
+            <label class="rule-switch">
+              <input type="checkbox" id="ruleNo2on4">
+              <div class="rule-details">
+                <span class="rule-title">No +2 on +4 Stacking</span>
+                <span class="rule-desc">Cannot play +2 card to stack on +4.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Column 3: Custom Rule Card Creator -->
+        <div class="lobby-creator glass-panel">
+          <h2>Custom Card Creator</h2>
+          <p class="section-desc">Design custom rule cards to shuffle into the deck.</p>
+          
+          <div class="creator-preview-container">
+            <div class="uno-card wild custom-card" id="cardPreview">
+              <span class="card-corner top" id="previewCornerVal">?</span>
+              <div class="card-center">
+                <span class="card-center-val" id="previewCenterVal">?</span>
+              </div>
+              <span class="card-corner bottom" id="previewCornerVal2">?</span>
+            </div>
+
+            <div class="creator-form">
+              <div class="form-group">
+                <label for="custName">Card Name</label>
+                <input type="text" id="custName" placeholder="e.g. Draw 5 Skip" value="Draw 5 Skip">
+              </div>
+              <div class="form-group">
+                <label for="custSymbol">Symbol (Corner/Center)</label>
+                <input type="text" id="custSymbol" placeholder="e.g. +5" value="+5" maxlength="3">
+              </div>
+              <div class="form-group">
+                <label for="custColor">Card Color</label>
+                <select id="custColor">
+                  <option value="wild" selected>🌈 Wild / Customizable</option>
+                  <option value="red">🔴 Red</option>
+                  <option value="blue">🔵 Blue</option>
+                  <option value="green">🟢 Green</option>
+                  <option value="yellow">🟡 Yellow</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Card Effects</label>
+                <div class="effects-toggles">
+                  <label><input type="checkbox" id="effectDraw" checked> Draw Penalty</label>
+                  <input type="number" id="effectDrawQty" value="5" min="1" max="10" style="width: 60px; padding: 4px;">
                 </div>
-              </label>
-              <label class="rule-switch">
-                <input type="checkbox" id="ruleDrawMatch">
-                <div class="rule-details">
-                  <span class="rule-title">Draw to Match</span>
-                  <span class="rule-desc">Keep drawing until you can play.</span>
+                <div class="effects-toggles">
+                  <label><input type="checkbox" id="effectSkip" checked> Skip Next Player</label>
                 </div>
-              </label>
-              <label class="rule-switch">
-                <input type="checkbox" id="ruleJumpIn">
-                <div class="rule-details">
-                  <span class="rule-title">Jump-In Rule</span>
-                  <span class="rule-desc">Play out of turn with exact card match.</span>
+                <div class="effects-toggles">
+                  <label><input type="checkbox" id="effectReverse"> Reverse Direction</label>
                 </div>
-              </label>
-              <label class="rule-switch">
-                <input type="checkbox" id="ruleNo2on4">
-                <div class="rule-details">
-                  <span class="rule-title">No +2 on +4 Stacking</span>
-                  <span class="rule-desc">Cannot play +2 card to stack on +4.</span>
+                <div class="effects-toggles">
+                  <label><input type="checkbox" id="effectSwap"> Swap Hands with Next</label>
                 </div>
-              </label>
+                <div class="effects-toggles">
+                  <label><input type="checkbox" id="effectDrawMatch"> Draw-Till-Color</label>
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btnAddCustomCard" style="width: 100%; margin-top: 10px;">Add Card to Deck</button>
             </div>
           </div>
 
-          <!-- Custom Rule Card Creator -->
-          <div class="sidebar-block glass-panel">
-            <h3>Custom Rule Card Builder</h3>
-            <p class="block-desc">Create custom cards to shuffle into the deck.</p>
-            
-            <div class="creator-preview-container">
-              <div class="uno-card wild custom-card" id="cardPreview">
-                <span class="card-corner top" id="previewCornerVal">?</span>
-                <div class="card-center">
-                  <span class="card-center-val" id="previewCenterVal">?</span>
-                </div>
-                <span class="card-corner bottom" id="previewCornerVal2">?</span>
-              </div>
-
-              <div class="creator-form">
-                <div class="form-group">
-                  <label for="custName">Card Name</label>
-                  <input type="text" id="custName" placeholder="e.g. Draw 5 Skip" value="Draw 5 Skip">
-                </div>
-                <div class="form-group">
-                  <label for="custSymbol">Symbol (Corner/Center)</label>
-                  <input type="text" id="custSymbol" placeholder="e.g. +5" value="+5" maxlength="3">
-                </div>
-                <div class="form-group">
-                  <label for="custColor">Card Color</label>
-                  <select id="custColor">
-                    <option value="wild" selected>🌈 Wild / Customizable</option>
-                    <option value="red">🔴 Red</option>
-                    <option value="blue">🔵 Blue</option>
-                    <option value="green">🟢 Green</option>
-                    <option value="yellow">🟡 Yellow</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label>Card Effects</label>
-                  <div class="effects-toggles">
-                    <label><input type="checkbox" id="effectDraw" checked> Draw Penalty</label>
-                    <input type="number" id="effectDrawQty" value="5" min="1" max="10" style="width: 60px; padding: 4px;">
-                  </div>
-                  <div class="effects-toggles">
-                    <label><input type="checkbox" id="effectSkip" checked> Skip Next Player</label>
-                  </div>
-                  <div class="effects-toggles">
-                    <label><input type="checkbox" id="effectReverse"> Reverse Direction</label>
-                  </div>
-                  <div class="effects-toggles">
-                    <label><input type="checkbox" id="effectSwap"> Swap Hands with Next</label>
-                  </div>
-                  <div class="effects-toggles">
-                    <label><input type="checkbox" id="effectDrawMatch"> Draw-Till-Color</label>
-                  </div>
-                </div>
-                <button class="btn btn-secondary btn-sm" id="btnAddCustomCard" style="width: 100%; margin-top: 10px;">Add Card to Deck</button>
-              </div>
-            </div>
-
-            <!-- Custom Card Deck counter -->
-            <div class="custom-card-counter">
-              Custom Cards Added: <span id="customCardCountVal" class="highlight">0</span>
-            </div>
+          <!-- Custom Card Deck counter -->
+          <div class="custom-card-counter">
+            Custom Cards Added: <span id="customCardCountVal" class="highlight">0</span>
           </div>
         </div>
       </section>
@@ -199,6 +208,8 @@
 
   <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Sound Synthesizer -->
+  <script src="js/sound.js"></script>
   <!-- Main Host Logic -->
   <script src="js/host.js"></script>
   <!-- Credits Floater -->

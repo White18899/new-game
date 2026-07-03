@@ -840,11 +840,12 @@ function processMultipleCardEffects(cards, room, chosenColor) {
     }
 
     // Regular draw
+    let drewPlayable = false;
     if (room.houseRules.drawToMatch) {
       // Draw until player finds a playable card
-      let drewPlayable = false;
+      let drewPlayableTemp = false;
       let drawnCount = 0;
-      while (!drewPlayable && room.deck.length + room.discardPile.length > 1) {
+      while (!drewPlayableTemp && room.deck.length + room.discardPile.length > 1) {
         if (room.deck.length === 0) {
           recycleDiscardPile(room);
         }
@@ -852,6 +853,7 @@ function processMultipleCardEffects(cards, room, chosenColor) {
         player.cards.push(cardDrawn);
         drawnCount++;
         if (isValidPlay(cardDrawn, room, playerIndex)) {
+          drewPlayableTemp = true;
           drewPlayable = true;
         }
       }
@@ -863,13 +865,21 @@ function processMultipleCardEffects(cards, room, chosenColor) {
       }
       const card = room.deck.pop();
       player.cards.push(card);
-      addLog(room, `${player.name} drew a card.`);
+      addLog(room, `${player.name} drew standard card.`);
+      if (isValidPlay(card, room, playerIndex)) {
+        drewPlayable = true;
+      }
     }
 
-    // Note: After drawing, if player still cannot (or chooses not to) play, they pass turn.
-    // Let's automatically advance turn to keep the flow active
-    advanceTurn(room);
-    broadcastState(room);
+    // If they drew a playable card, don't auto-advance the turn so they can play it!
+    if (drewPlayable) {
+      addLog(room, `${player.name} drew a playable card and has the option to play it.`);
+      broadcastState(room);
+    } else {
+      // Auto-advance if not playable
+      advanceTurn(room);
+      broadcastState(room);
+    }
   });
 
   // Pass Turn (optional: if they draw a card and want to pass, though our regular draw auto-passes)

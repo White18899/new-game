@@ -3,8 +3,8 @@
   flex-direction: column;
   height: 100vh;
   justify-content: space-between;
-  padding: 12px;
-  gap: 12px;
+  padding: 6px;
+  gap: 6px;
   overflow: hidden;
   background-color: var(--bg-dark);
 }
@@ -13,7 +13,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px;
+  padding: 6px 12px;
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-light);
 }
@@ -40,14 +40,20 @@
 }
 
 .game-status-glow {
-  padding: 6px 12px;
+  padding: 10px 24px;
   border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 800;
   font-family: var(--font-display);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   border: 1px solid var(--border-light);
+  text-align: center;
+  margin: 6px auto;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: all 0.2s ease;
 }
 
 .game-status-glow.waiting {
@@ -59,6 +65,7 @@
   background: #ffffff;
   color: #000000;
   border-color: #ffffff;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.45);
 }
 
 /* Play View Piles */
@@ -68,8 +75,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  min-height: 0;
+  gap: 6px;
+  min-height: auto;
 }
 
 .piles-hud {
@@ -94,8 +101,8 @@
 }
 
 .discard-preview-container {
-  width: 90px;
-  height: 140px;
+  width: 110px;
+  height: 165px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,26 +111,58 @@
 
 .discard-preview-container .uno-card {
   cursor: default;
+  width: 110px !important;
+  height: 165px !important;
+}
+.discard-preview-container .uno-card .card-corner {
+  font-size: 22px !important;
+}
+.discard-preview-container .uno-card .card-center-val {
+  font-size: 50px !important;
 }
 .discard-preview-container .uno-card:hover {
   transform: none !important;
 }
 
 .color-badge {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.7rem;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
   background: #0d0d0d;
   border: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  margin-top: 4px;
+  color: #ffffff;
+  margin-top: 2px;
 }
+
+.color-badge::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background-color: var(--text-secondary);
+}
+
+.color-badge.red { border-color: var(--clr-red); }
+.color-badge.red::before { background-color: var(--clr-red); }
+
+.color-badge.blue { border-color: var(--clr-blue); }
+.color-badge.blue::before { background-color: var(--clr-blue); }
+
+.color-badge.green { border-color: var(--clr-green); }
+.color-badge.green::before { background-color: var(--clr-green); }
+
+.color-badge.yellow { border-color: var(--clr-yellow); }
+.color-badge.yellow::before { background-color: var(--clr-yellow); }
 
 /* Draw deck button */
 .draw-pile-btn {
-  width: 90px;
-  height: 140px;
+  width: 110px;
+  height: 165px;
   border-radius: 6px;
   background: #050505;
   border: 2px solid #ffffff;
@@ -151,8 +190,8 @@
   color: #000000;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.9rem;
-  padding: 6px 12px;
+  font-size: 1.1rem;
+  padding: 8px 16px;
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -188,6 +227,8 @@
   align-items: center;
   padding: 4px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 100 !important;
 }
 
 .btn-uno {
@@ -231,7 +272,7 @@
 .player-hand-container {
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 16px 20px 24px;
+  padding: 8px 10px 12px;
   width: 100%;
   flex-shrink: 0;
   background: #000000;
@@ -242,16 +283,25 @@
   display: flex;
   justify-content: flex-start;
   align-items: flex-end;
-  height: 150px;
+  height: 290px;
   min-width: 100%;
   padding-left: 20px;
 }
 
 .player-hand .uno-card {
-  margin-left: -40px;
+  width: 150px !important;
+  height: 225px !important;
+  margin-left: -65px;
+  padding: 14px !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: bottom center;
   box-shadow: -4px 0 10px rgba(0,0,0,0.8);
+}
+.player-hand .uno-card .card-corner {
+  font-size: 28px !important;
+}
+.player-hand .uno-card .card-center-val {
+  font-size: 64px !important;
 }
 
 .player-hand .uno-card:first-child {
@@ -263,19 +313,21 @@
   border-color: #ffffff !important;
   opacity: 1 !important;
   filter: none !important;
+  z-index: 10 !important;
 }
 
 .player-hand .uno-card:not(.playable) {
   border-color: #222222 !important;
   opacity: 1 !important;
-  filter: brightness(0.35) grayscale(0.2) !important;
+  filter: brightness(0.62) saturate(0.8) !important;
   cursor: not-allowed;
+  z-index: 1 !important;
 }
 
 .player-hand .uno-card:hover, .player-hand .uno-card:active {
   transform: translateY(-30px) scale(1.05) rotate(0deg);
-  margin-right: 10px;
-  margin-left: -30px;
+  margin-right: 12px;
+  margin-left: -33px;
   z-index: 100 !important;
 }
 
@@ -351,7 +403,7 @@
 
 /* Selected to play matching sets styling */
 .player-hand .uno-card.selected-to-play {
-  transform: translateY(-40px) scale(1.05) rotate(0deg) !important;
+  transform: translateY(-38px) scale(1.05) rotate(0deg) !important;
   border-color: #ffffff !important;
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.4) !important;
   z-index: 120 !important;
