@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let myHand = [];
   let currentPlayers = [];
+  let currentActivePlayerIndex = 0;
   let isMyTurn = false;
   let hasDrawnThisTurn = false;
   let activeColor = '';
@@ -62,18 +63,16 @@ document.addEventListener('DOMContentLoaded', () => {
     btnMuteSound.addEventListener('click', () => {
       const isMuted = window.gameSound.toggleMute();
       btnMuteSound.innerHTML = isMuted ? `
-        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
           <line x1="23" y1="9" x2="17" y2="15"></line>
           <line x1="17" y1="9" x2="23" y2="15"></line>
         </svg>
-        Audio: Off
       ` : `
-        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+        <svg class="audio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
           <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
         </svg>
-        Audio: On
       `;
       btnMuteSound.classList.toggle('active', !isMuted);
     });
@@ -110,6 +109,54 @@ document.addEventListener('DOMContentLoaded', () => {
     activeValue = state.currentValue;
     activeDrawStack = state.drawStack;
     activeHouseRules = state.houseRules || {};
+
+    // Toggle between lobby card layout and circular gameplay board layout
+    const pilesHud = document.getElementById('pilesHud');
+    const gameTableContainer = document.getElementById('gameTableContainer');
+    
+    if (state.status === 'lobby') {
+      if (pilesHud) pilesHud.style.display = 'flex';
+      if (gameTableContainer) gameTableContainer.style.display = 'none';
+    } else {
+      if (pilesHud) pilesHud.style.display = 'none';
+      if (gameTableContainer) gameTableContainer.style.display = 'flex';
+      
+      // Render circular board elements
+      currentActivePlayerIndex = state.currentPlayerIndex;
+      renderRadialPlayers(state.players, currentActivePlayerIndex);
+      renderDiscardPile(state.topCard);
+      
+      // Rotate direction indicator
+      const directionIndicator = document.getElementById('directionIndicator');
+      if (directionIndicator) {
+        directionIndicator.className = 'direction-indicator ' + (state.direction === 1 ? 'clockwise' : 'counter-clockwise');
+      }
+
+      // Active color border glow on table center
+      const tableCenter = document.querySelector('.table-center');
+      if (tableCenter) {
+        tableCenter.className = 'table-center ' + (state.currentColor || '');
+      }
+
+      // Update table active color indicator pill
+      const tableColorIndicator = document.getElementById('tableColorIndicator');
+      const tableColorName = document.getElementById('tableColorName');
+      if (tableColorIndicator && tableColorName) {
+        const color = state.currentColor || 'none';
+        tableColorIndicator.className = 'table-color-indicator ' + color;
+        tableColorName.innerText = color.toUpperCase();
+      }
+
+      // Sync active state of Draw Deck visual on table
+      const drawDeckHolder = document.getElementById('drawDeckHolder');
+      if (drawDeckHolder) {
+        if (state.status === 'playing' && isMyTurn && !hasDrawnThisTurn) {
+          drawDeckHolder.classList.remove('disabled');
+        } else {
+          drawDeckHolder.classList.add('disabled');
+        }
+      }
+    }
 
     // 0. Sound Effects & Triggers
     if (isMyTurn && !lastMyTurnState) {
@@ -259,6 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHand();
   });
 
+  let lastHandIds = [];
+
   // Render player cards
   function renderHand() {
     playerHand.innerHTML = '';
@@ -267,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (myHand.length === 0) {
       playerHand.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; width: 100%; text-align: center; padding: 20px;">No cards in hand.</div>';
+      lastHandIds = [];
       return;
     }
 
@@ -274,6 +324,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const cardEl = document.createElement('div');
       cardEl.className = `uno-card ${c.color}`;
       
+      // Card animation if newly drawn
+      if (lastHandIds.length > 0 && !lastHandIds.includes(c.id)) {
+        cardEl.classList.add('drawing-card');
+        cardEl.style.setProperty('--deck-x', '0px');
+        cardEl.style.setProperty('--deck-y', '-250px');
+      }
+
       if (c.type === 'custom') {
         cardEl.classList.add('custom-card');
         if (c.color !== 'red' && c.color !== 'blue' && c.color !== 'green' && c.color !== 'yellow' && c.color !== 'wild') {
@@ -366,6 +423,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       playerHand.appendChild(cardEl);
     });
+
+    // Update historical hand IDs list
+    lastHandIds = myHand.map(c => c.id);
   }
 
   // Draw Discard Pile preview card
@@ -373,12 +433,13 @@ document.addEventListener('DOMContentLoaded', () => {
     boardDiscardPreview.innerHTML = '';
     
     // Update active color hud label
-    hudColorBadge.innerText = `ACTIVE COLOR: ${currentColor.toUpperCase()}`;
-    hudColorBadge.className = 'color-badge ' + currentColor;
+    const upperColor = currentColor ? currentColor.toUpperCase() : 'NONE';
+    hudColorBadge.innerText = `ACTIVE COLOR: ${upperColor}`;
+    hudColorBadge.className = 'color-badge ' + (currentColor || 'none');
 
     if (!card) {
       boardDiscardPreview.innerHTML = `
-        <div class="uno-card glass-panel" style="border-color: rgba(255,255,255,0.1)">
+        <div class="uno-card placeholder-card">
           <div class="card-center"><span class="card-center-val">?</span></div>
         </div>`;
       return;
@@ -740,5 +801,153 @@ document.addEventListener('DOMContentLoaded', () => {
     
     playerPickerOverlay.classList.add('active');
   }
+
+  // Draw pile on circular table click triggers btnDrawCard click
+  const drawDeckHolder = document.getElementById('drawDeckHolder');
+  if (drawDeckHolder) {
+    drawDeckHolder.addEventListener('click', () => {
+      if (!btnDrawCard.disabled) {
+        btnDrawCard.click();
+      }
+    });
+  }
+
+  // State tracker for top card
+  let currentTopCard = null;
+
+  // Render discard pile with stacked/tilted visual on circular table
+  function renderDiscardPile(topCard) {
+    const discardStack = document.getElementById('discardStack');
+    if (!discardStack) return;
+
+    if (!topCard) {
+      discardStack.innerHTML = '';
+      currentTopCard = null;
+      return;
+    }
+
+    if (currentTopCard && currentTopCard.id === topCard.id) {
+      return;
+    }
+
+    currentTopCard = topCard;
+    discardStack.innerHTML = '';
+
+    // Render 1 dummy card underneath for a subtle 3D stack depth effect
+    const dummyEl = document.createElement('div');
+    dummyEl.className = 'uno-card red';
+    dummyEl.style.transform = 'translate(-2px, -3px) rotate(-6deg)';
+    dummyEl.style.opacity = '0.4';
+    dummyEl.style.pointerEvents = 'none';
+    dummyEl.innerHTML = '<div class="card-center"></div>';
+    discardStack.appendChild(dummyEl);
+
+    // Render the actual top card with throw animation from bottom
+    const cardEl = document.createElement('div');
+    cardEl.className = `uno-card ${topCard.color} thrown-card`;
+    if (topCard.type === 'custom') {
+      cardEl.classList.add('custom-card');
+      if (topCard.color !== 'red' && topCard.color !== 'blue' && topCard.color !== 'green' && topCard.color !== 'yellow' && topCard.color !== 'wild') {
+        cardEl.classList.add('custom-colored');
+        cardEl.style.backgroundColor = topCard.color;
+      }
+    }
+
+    const sym = topCard.value;
+    let displaySym = sym;
+    let extraClass = '';
+
+    if (topCard.type === 'action') {
+      if (sym === 'skip') displaySym = '⊘';
+      else if (sym === 'reverse') displaySym = '⇆';
+      else if (sym === 'draw2') displaySym = '+2';
+    } else if (topCard.type === 'wild') {
+      displaySym = (sym === 'wild4') ? '+4' : ((sym === 'swap') ? '🔀' : 'W');
+    }
+
+    cardEl.innerHTML = `
+      <span class="card-corner top">${displaySym || ''}</span>
+      <div class="card-center">
+        <span class="card-center-val ${extraClass}">${displaySym}</span>
+      </div>
+      <span class="card-corner bottom">${displaySym || ''}</span>
+      ${topCard.type === 'custom' ? `<div class="card-details-tooltip"><b>${topCard.name}</b><br>${topCard.description || 'Custom Card'}</div>` : ''}
+    `;
+
+    cardEl.style.setProperty('--start-x', '0px');
+    cardEl.style.setProperty('--start-y', '250px');
+    cardEl.style.setProperty('--start-rot', '0deg');
+    cardEl.style.setProperty('--end-rot', '-4deg');
+    discardStack.appendChild(cardEl);
+  }
+
+  // Radial player placement relative to current player (always at the bottom)
+  function renderRadialPlayers(players, activeIndex) {
+    const table = document.getElementById('unoTable');
+    if (!table) return;
+
+    // Clear old elements from the table that are players (keep table-center)
+    const playersOnTable = document.querySelectorAll('.table-player');
+    playersOnTable.forEach(p => p.remove());
+
+    // Dynamically calculate radius based on actual table display size (matching CSS queries)
+    const isMobile = window.innerWidth <= 768;
+    const tableWidth = isMobile ? 320 : 460;
+    const tableHeight = isMobile ? 250 : 320;
+    const radiusX = Math.round(tableWidth / 2) - 15;
+    const radiusY = Math.round(tableHeight / 2) - 15;
+    const totalPlayers = players.length;
+
+    // Find the current player's index in the list
+    const myIndex = players.findIndex(p => p.name === playerName);
+    if (myIndex === -1) return;
+
+    players.forEach((p, index) => {
+      // Calculate radial coordinates relative to my index so that I am always at the bottom (angle PI/2)
+      const offsetIndex = (index - myIndex + totalPlayers) % totalPlayers;
+      const angle = (offsetIndex * (2 * Math.PI) / totalPlayers) + (Math.PI / 2);
+      
+      const x = Math.round(Math.cos(angle) * radiusX);
+      const y = Math.round(Math.sin(angle) * radiusY);
+
+      const playerDiv = document.createElement('div');
+      playerDiv.className = 'table-player';
+      if (index === activeIndex) {
+        playerDiv.classList.add('active');
+      }
+
+      // Position the element relative to table center
+      playerDiv.style.left = `calc(50% + ${x}px)`;
+      playerDiv.style.top = `calc(50% + ${y}px)`;
+
+      const unoBadge = p.unoDeclared && !p.hasWon ? '<span class="uno-badge">UNO!</span>' : '';
+
+      let cardBadgeHtml = `<div class="card-badge">${p.cardCount}</div>`;
+      let wonOverlay = '';
+      if (p.hasWon) {
+        cardBadgeHtml = `<div class="card-badge rank-badge" style="background: var(--clr-yellow); color: #000; font-weight: 800; border: 2px solid #000;">#${p.rank}</div>`;
+        wonOverlay = `<div class="won-overlay-tag" style="position: absolute; top: -14px; font-size: 0.65rem; background: var(--clr-yellow); color: #000; border-radius: 4px; padding: 2px 6px; font-weight: 700; font-family: var(--font-display); box-shadow: 0 0 10px rgba(229, 169, 0, 0.4); text-transform: uppercase; z-index: 10;">Finished</div>`;
+      }
+
+      playerDiv.innerHTML = `
+        ${wonOverlay}
+        <div class="avatar-circle" style="${p.hasWon ? 'opacity: 0.6; border-color: var(--clr-yellow) !important;' : ''}">
+          ${p.avatar}
+          ${cardBadgeHtml}
+        </div>
+        <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}">${p.name} ${p.name === playerName ? '(You)' : ''}</div>
+        ${unoBadge}
+      `;
+
+      table.appendChild(playerDiv);
+    });
+  }
+
+  // Handle dynamic screen resizing to reposition player avatars instantly
+  window.addEventListener('resize', () => {
+    if (currentPlayers.length > 0 && gameTableContainer.style.display === 'flex') {
+      renderRadialPlayers(currentPlayers, currentActivePlayerIndex);
+    }
+  });
 
 });
