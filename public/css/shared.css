@@ -113,6 +113,17 @@ span, button {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.btn-danger {
+  background: transparent;
+  color: #ff4444;
+  border: 1px solid #ff4444;
+}
+.btn-danger:hover {
+  background: #ff4444;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 68, 68, 0.4);
+}
+
 /* Stark Card Styling */
 .uno-card {
   position: relative;

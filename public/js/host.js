@@ -91,6 +91,17 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastTotalCards = 0;
   let lastLogLength = 0;
 
+  // Exit Room Controller
+  const btnExitRoom = document.getElementById('btnExitRoom');
+  if (btnExitRoom) {
+    btnExitRoom.addEventListener('click', () => {
+      if (confirm('Are you sure you want to close this room and return to the main lobby?')) {
+        sessionStorage.clear();
+        window.location.href = '/index.html';
+      }
+    });
+  }
+
   // Sound Controller
   const btnMuteSound = document.getElementById('btnMuteSound');
   if (btnMuteSound) {

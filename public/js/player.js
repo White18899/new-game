@@ -78,6 +78,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Exit Game Controller
+  const btnExitRoom = document.getElementById('btnExitRoom');
+  if (btnExitRoom) {
+    btnExitRoom.addEventListener('click', () => {
+      if (confirm('Are you sure you want to leave the game and return to the main lobby?')) {
+        sessionStorage.clear();
+        window.location.href = '/index.html';
+      }
+    });
+  }
+
   // Re-join the room with this socket
   socket.on('connect', () => {
     console.log('Registering socket with player room session...');
