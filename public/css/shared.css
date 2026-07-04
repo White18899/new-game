@@ -353,4 +353,12 @@ span, button {
   }
 }
 
+.btn-copy {
+  color: #777777;
+  transition: color 0.2s;
+}
+.btn-copy:hover {
+  color: #ffffff !important;
+}
+
 

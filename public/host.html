@@ -31,7 +31,14 @@
           Audio: Off
         </button>
         <div>Connect via: <span id="connectUrl" class="highlight">http://...</span></div>
-        <div>Room Code: <span id="roomCodeVal" class="room-code-glow">----</span></div>
+        <div style="display: inline-flex; align-items: center;">Room Code: <span id="roomCodeVal" class="room-code-glow" style="margin-right: 2px;">----</span>
+          <button class="btn-copy" id="btnCopyCode" title="Copy Room Code" style="background: transparent; border: none; cursor: pointer; display: inline-flex; align-items: center; margin-left: 4px; padding: 2px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -142,6 +149,9 @@
                 </div>
                 <div class="effects-toggles">
                   <label><input type="checkbox" id="effectSwap"> Swap Hands with Next</label>
+                </div>
+                <div class="effects-toggles">
+                  <label><input type="checkbox" id="effectSwapAny"> Swap Hands with Anyone</label>
                 </div>
                 <div class="effects-toggles">
                   <label><input type="checkbox" id="effectDrawMatch"> Draw-Till-Color</label>

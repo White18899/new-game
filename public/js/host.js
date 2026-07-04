@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const effectSkip = document.getElementById('effectSkip');
   const effectReverse = document.getElementById('effectReverse');
   const effectSwap = document.getElementById('effectSwap');
+  const effectSwapAny = document.getElementById('effectSwapAny');
   const effectDrawMatch = document.getElementById('effectDrawMatch');
   const btnAddCustomCard = document.getElementById('btnAddCustomCard');
   const cardPreview = document.getElementById('cardPreview');
@@ -98,6 +99,34 @@ document.addEventListener('DOMContentLoaded', () => {
       if (confirm('Are you sure you want to close this room and return to the main lobby?')) {
         sessionStorage.clear();
         window.location.href = '/index.html';
+      }
+    });
+  }
+
+  // Copy Room Code Controller
+  const btnCopyCode = document.getElementById('btnCopyCode');
+  if (btnCopyCode) {
+    btnCopyCode.addEventListener('click', () => {
+      const roomCodeText = document.getElementById('roomCodeVal').innerText;
+      if (roomCodeText && roomCodeText !== '----') {
+        navigator.clipboard.writeText(roomCodeText).then(() => {
+          // Success feedback (checkmark SVG)
+          btnCopyCode.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="width: 14px; height: 14px;">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          `;
+          setTimeout(() => {
+            btnCopyCode.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            `;
+          }, 1500);
+        }).catch(err => {
+          console.error('Failed to copy text: ', err);
+        });
       }
     });
   }
@@ -167,6 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (effectSwap.checked) {
       actions.push({ type: 'swap', target: 'next' });
     }
+    if (effectSwapAny.checked) {
+      actions.push({ type: 'swap', target: 'chosen' });
+    }
     if (effectDrawMatch.checked) {
       actions.push({ type: 'draw_till_color' });
     }
@@ -196,6 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     effectSkip.checked = true;
     effectReverse.checked = false;
     effectSwap.checked = false;
+    effectSwapAny.checked = false;
     effectDrawMatch.checked = false;
     updatePreview();
   });
@@ -437,7 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (sym === 'reverse') displaySym = '⇆';
         else if (sym === 'draw2') displaySym = '+2';
       } else if (c.type === 'wild') {
-        displaySym = (sym === 'wild4') ? '+4' : 'W';
+        displaySym = (sym === 'wild4') ? '+4' : ((sym === 'swap') ? '🔀' : 'W');
         extraClass = '';
       }
 

@@ -91,6 +91,11 @@ function generateDeck(customCards = []) {
     deck.push({ id: `std_${cardId++}`, type: 'wild', color: 'wild', value: 'wild4' });
   }
 
+  // Swap cards (2 copies)
+  for (let i = 0; i < 2; i++) {
+    deck.push({ id: `std_${cardId++}`, type: 'wild', color: 'wild', value: 'swap' });
+  }
+
   // Inject custom cards
   customCards.forEach(cust => {
     // Add multiple copies based on quantity requested (default 2 or 4)
@@ -243,7 +248,7 @@ function isValidPlay(card, room, playerIndex) {
 }
 
 // Check card details and process effects
-function processCardEffects(card, room, chosenColor) {
+function processCardEffects(card, room, chosenColor, targetPlayerName) {
   let skipNext = false;
   let drawCount = 0;
   let reverseDirection = false;
@@ -262,6 +267,8 @@ function processCardEffects(card, room, chosenColor) {
     forceColor = true;
     if (card.value === 'wild4') {
       drawCount = 4;
+    } else if (card.value === 'swap') {
+      customActionList.push({ type: 'swap', target: 'chosen' });
     }
   } else if (card.type === 'custom') {
     // Process list of actions defined in the custom card metadata
@@ -344,6 +351,14 @@ function processCardEffects(card, room, chosenColor) {
             targetIndex = idx;
           }
         });
+      } else if (act.target === 'chosen') {
+        const tIdx = targetPlayerName ? room.players.findIndex(p => p.name === targetPlayerName) : -1;
+        if (tIdx !== -1 && tIdx !== room.currentPlayerIndex) {
+          targetIndex = tIdx;
+        } else {
+          // Fallback to next player
+          targetIndex = (room.currentPlayerIndex + room.direction + room.players.length) % room.players.length;
+        }
       }
       
       if (targetIndex !== room.currentPlayerIndex) {
@@ -596,7 +611,7 @@ io.on('connection', (socket) => {
   });
 
 // Process action triggers for multiple cards played together
-function processMultipleCardEffects(cards, room, chosenColor) {
+function processMultipleCardEffects(cards, room, chosenColor, targetPlayerName) {
   let skipCount = 0;
   let drawCount = 0;
   let reverseDirectionCount = 0;
@@ -619,6 +634,8 @@ function processMultipleCardEffects(cards, room, chosenColor) {
       forceColor = true;
       if (card.value === 'wild4') {
         drawCount += 4;
+      } else if (card.value === 'swap') {
+        customActionList.push({ type: 'swap', target: 'chosen' });
       }
     } else if (card.type === 'custom') {
       if (card.actions) {
@@ -703,6 +720,14 @@ function processMultipleCardEffects(cards, room, chosenColor) {
             targetIndex = idx;
           }
         });
+      } else if (act.target === 'chosen') {
+        const tIdx = targetPlayerName ? room.players.findIndex(p => p.name === targetPlayerName) : -1;
+        if (tIdx !== -1 && tIdx !== room.currentPlayerIndex) {
+          targetIndex = tIdx;
+        } else {
+          // Fallback to next player
+          targetIndex = (room.currentPlayerIndex + room.direction + room.players.length) % room.players.length;
+        }
       }
       
       if (targetIndex !== room.currentPlayerIndex) {
@@ -745,7 +770,7 @@ function processMultipleCardEffects(cards, room, chosenColor) {
 }
 
   // Play Card
-  socket.on('play_card', ({ roomCode, cardId, cardIds, chosenColor }) => {
+  socket.on('play_card', ({ roomCode, cardId, cardIds, chosenColor, targetPlayerName }) => {
     const room = rooms.get(roomCode);
     if (!room || room.status !== 'playing') return;
 
@@ -877,7 +902,7 @@ function processMultipleCardEffects(cards, room, chosenColor) {
     }
 
     // Process action triggers
-    processMultipleCardEffects(cardsToPlay, room, chosenColor);
+    processMultipleCardEffects(cardsToPlay, room, chosenColor, targetPlayerName);
     broadcastState(room);
   });
 

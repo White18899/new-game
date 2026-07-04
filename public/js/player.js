@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   hudRoom.innerText = roomCode;
 
   let myHand = [];
+  let currentPlayers = [];
   let isMyTurn = false;
   let hasDrawnThisTurn = false;
   let activeColor = '';
@@ -103,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Receive individualized player state
   socket.on('player_state', (state) => {
     myHand = state.hand || [];
+    currentPlayers = state.players || [];
     isMyTurn = state.isMyTurn;
     activeColor = state.currentColor;
     activeValue = state.currentValue;
@@ -299,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (sym === 'reverse') displaySym = '⇆';
         else if (sym === 'draw2') displaySym = '+2';
       } else if (c.type === 'wild') {
-        displaySym = (sym === 'wild4') ? '+4' : 'W';
+        displaySym = (sym === 'wild4') ? '+4' : ((sym === 'swap') ? '🔀' : 'W');
         extraClass = '';
       }
 
@@ -351,7 +353,13 @@ document.addEventListener('DOMContentLoaded', () => {
             pendingWildCardIds = null;
             colorPickerOverlay.classList.add('active');
           } else {
-            socket.emit('play_card', { roomCode, cardId: c.id });
+            if (c.type === 'custom' && c.actions.some(a => a.type === 'swap' && a.target === 'chosen')) {
+              showPlayerPicker((targetPlayerName) => {
+                socket.emit('play_card', { roomCode, cardId: c.id, targetPlayerName });
+              });
+            } else {
+              socket.emit('play_card', { roomCode, cardId: c.id });
+            }
           }
         }
       });
@@ -396,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (sym === 'reverse') displaySym = '⇆';
       else if (sym === 'draw2') displaySym = '+2';
     } else if (card.type === 'wild') {
-      displaySym = (sym === 'wild4') ? '+4' : 'W';
+      displaySym = (sym === 'wild4') ? '+4' : ((sym === 'swap') ? '🔀' : 'W');
       extraClass = '';
     }
 
@@ -482,10 +490,27 @@ document.addEventListener('DOMContentLoaded', () => {
       return c.color === 'wild' || c.color === 'wild4' || (c.type === 'custom' && c.actions && c.actions.some(a => a.type === 'choose_color'));
     });
 
+    const hasSwapChosen = selectedCards.some(id => {
+      const c = myHand.find(card => card.id === id);
+      if (!c) return false;
+      return (c.type === 'custom' && c.actions && c.actions.some(a => a.type === 'swap' && a.target === 'chosen'))
+          || (c.type === 'wild' && c.value === 'swap');
+    });
+
     if (hasWild) {
       pendingWildCardIds = [...selectedCards];
       pendingWildCardId = null;
       colorPickerOverlay.classList.add('active');
+    } else if (hasSwapChosen) {
+      showPlayerPicker((targetPlayerName) => {
+        socket.emit('play_card', {
+          roomCode,
+          cardIds: selectedCards,
+          targetPlayerName
+        });
+        selectedCards = [];
+        updatePlayButtonHUD();
+      });
     } else {
       socket.emit('play_card', {
         roomCode,
@@ -518,23 +543,57 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', () => {
       const chosenColor = btn.getAttribute('data-color');
       if (pendingWildCardId) {
-        socket.emit('play_card', {
-          roomCode,
-          cardId: pendingWildCardId,
-          chosenColor: chosenColor
-        });
-        pendingWildCardId = null;
+        const c = myHand.find(card => card.id === pendingWildCardId);
+        const hasSwapChosen = (c && c.type === 'custom' && c.actions && c.actions.some(a => a.type === 'swap' && a.target === 'chosen'))
+                            || (c && c.type === 'wild' && c.value === 'swap');
+        
         colorPickerOverlay.classList.remove('active');
+        if (hasSwapChosen) {
+          showPlayerPicker((targetPlayerName) => {
+            socket.emit('play_card', {
+              roomCode,
+              cardId: pendingWildCardId,
+              chosenColor: chosenColor,
+              targetPlayerName: targetPlayerName
+            });
+            pendingWildCardId = null;
+          });
+        } else {
+          socket.emit('play_card', {
+            roomCode,
+            cardId: pendingWildCardId,
+            chosenColor: chosenColor
+          });
+          pendingWildCardId = null;
+        }
       } else if (pendingWildCardIds && pendingWildCardIds.length > 0) {
-        socket.emit('play_card', {
-          roomCode,
-          cardIds: pendingWildCardIds,
-          chosenColor: chosenColor
-        });
-        pendingWildCardIds = null;
-        selectedCards = [];
-        updatePlayButtonHUD();
+        const c = myHand.find(card => card.id === pendingWildCardIds[0]);
+        const hasSwapChosen = (c && c.type === 'custom' && c.actions && c.actions.some(a => a.type === 'swap' && a.target === 'chosen'))
+                            || (c && c.type === 'wild' && c.value === 'swap');
+        
         colorPickerOverlay.classList.remove('active');
+        if (hasSwapChosen) {
+          showPlayerPicker((targetPlayerName) => {
+            socket.emit('play_card', {
+              roomCode,
+              cardIds: pendingWildCardIds,
+              chosenColor: chosenColor,
+              targetPlayerName: targetPlayerName
+            });
+            pendingWildCardIds = null;
+            selectedCards = [];
+            updatePlayButtonHUD();
+          });
+        } else {
+          socket.emit('play_card', {
+            roomCode,
+            cardIds: pendingWildCardIds,
+            chosenColor: chosenColor
+          });
+          pendingWildCardIds = null;
+          selectedCards = [];
+          updatePlayButtonHUD();
+        }
       }
     });
   });
@@ -648,6 +707,38 @@ document.addEventListener('DOMContentLoaded', () => {
       return `${name}: Reconnect`;
     }
     return msg;
+  }
+
+  function showPlayerPicker(onSelect) {
+    const playerPickerOverlay = document.getElementById('playerPickerOverlay');
+    const playerPickerGrid = document.getElementById('playerPickerGrid');
+    
+    playerPickerGrid.innerHTML = '';
+    
+    // Opponents who haven't won yet
+    const opponents = currentPlayers.filter(p => p.name !== playerName && !p.hasWon);
+    
+    if (opponents.length === 0) {
+      onSelect(null);
+      return;
+    }
+    
+    opponents.forEach(p => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary';
+      btn.style.width = '100%';
+      btn.style.justifyContent = 'center';
+      btn.style.fontSize = '0.9rem';
+      btn.style.padding = '8px';
+      btn.innerHTML = `<span style="margin-right: 8px;">${p.avatar}</span> <b>${p.name}</b> (${p.cardCount} cards)`;
+      btn.addEventListener('click', () => {
+        playerPickerOverlay.classList.remove('active');
+        onSelect(p.name);
+      });
+      playerPickerGrid.appendChild(btn);
+    });
+    
+    playerPickerOverlay.classList.add('active');
   }
 
 });
