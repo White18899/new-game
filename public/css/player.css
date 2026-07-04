@@ -484,6 +484,7 @@
   .player-app {
     padding: 4px;
     height: 100vh;
+    height: 100svh;
     height: -webkit-fill-available;
     justify-content: flex-start;
     gap: 8px;
@@ -660,9 +661,10 @@
   }
 
   .player-hand-container {
-    padding: 6px 8px 12px !important;
+    padding: 6px 8px max(24px, env(safe-area-inset-bottom)) !important;
     border-top: 1px solid var(--border-light) !important;
-    height: 245px !important;
+    height: auto !important;
+    min-height: 245px !important;
   }
 
   .player-hand {
