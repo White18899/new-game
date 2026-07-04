@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Space+Grotesk:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   --bg-dark: #000000;
@@ -13,8 +13,8 @@
   --clr-green: #1e6b23;
   --clr-yellow: #e5a900;
 
-  --font-display: 'Outfit', sans-serif;
-  --font-sans: 'Space Grotesk', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'Inter', sans-serif;
 }
 
 * {
