@@ -137,6 +137,31 @@ class SoundManager {
     });
   }
 
+  playChatNotification() {
+    this.init();
+    if (this.isMuted || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    
+    // Quick synth chime
+    const playChime = (freq, time, dur) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
+      
+      gain.gain.setValueAtTime(0.08, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+      
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(time);
+      osc.stop(time + dur + 0.05);
+    };
+    
+    playChime(523.25, now, 0.1); // C5
+    playChime(659.25, now + 0.08, 0.15); // E5
+  }
+
   startBGM() {
     this.stopBGM();
     this.init();

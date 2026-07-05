@@ -119,6 +119,7 @@
       <div class="interaction-hud">
         <button class="btn btn-primary" id="btnPlaySelected" style="display: none;">Throw Card</button>
         <button class="btn btn-secondary" id="btnPassTurn" style="display: none; background: #222222; border-color: #555555; color: #ffffff;">Pass Turn</button>
+        <button class="btn btn-secondary" id="btnChat" style="background: rgba(255,255,255,0.08); border-color: var(--border-light); color: #fff;">Chat 💬</button>
         <button class="btn btn-uno" id="btnUno">UNO!</button>
         <button class="btn btn-callout" id="btnCallOut" style="display: none;">CALL OUT!</button>
       </div>
@@ -128,6 +129,51 @@
     <div class="player-hand-container">
       <div class="player-hand" id="playerHand">
         <!-- Player cards loaded dynamically -->
+      </div>
+    </div>
+
+    <!-- Chat & Reactions Modal Overlay -->
+    <div class="color-picker-overlay" id="chatOverlay">
+      <div class="color-picker-card glass-panel" style="max-width: 360px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 20px;">
+        <h3 style="margin-bottom: 16px; font-family: var(--font-display); font-size: 1.15rem; letter-spacing: 0.5px;">SEND REACTION</h3>
+        
+        <div class="chat-section-label">Emojis</div>
+        <div class="emoji-grid">
+          <button class="emoji-btn" data-emoji="😂">😂</button>
+          <button class="emoji-btn" data-emoji="😮">😮</button>
+          <button class="emoji-btn" data-emoji="😢">😢</button>
+          <button class="emoji-btn" data-emoji="😠">😠</button>
+          <button class="emoji-btn" data-emoji="🎉">🎉</button>
+          <button class="emoji-btn" data-emoji="👍">👍</button>
+          <button class="emoji-btn" data-emoji="🔥">🔥</button>
+          <button class="emoji-btn" data-emoji="👑">👑</button>
+        </div>
+
+        <div class="chat-section-label">Start Phrases</div>
+        <div class="phrase-list">
+          <button class="btn btn-secondary phrase-btn" data-phrase="Good luck, everyone! 👋">Good luck! 👋</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="Let's play! 🦖">Let's play! 🦖</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="Ready to win! 🏆">Ready to win! 🏆</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="Deal the cards! 🃏">Deal cards! 🃏</button>
+        </div>
+
+        <div class="chat-section-label">End Phrases</div>
+        <div class="phrase-list">
+          <button class="btn btn-secondary phrase-btn" data-phrase="Good game! 🤝">Good game! 🤝</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="GG! ⚡">GG! ⚡</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="Rematch? 🔄">Rematch? 🔄</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="So close! 🤏">So close! 🤏</button>
+        </div>
+
+        <div class="chat-section-label">General</div>
+        <div class="phrase-list">
+          <button class="btn btn-secondary phrase-btn" data-phrase="Hurry up! ⏰">Hurry up! ⏰</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="Oh no! 😱">Oh no! 😱</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="Nice play! 👍">Nice play! 👍</button>
+          <button class="btn btn-secondary phrase-btn" data-phrase="UNO is mine! 📢">UNO is mine! 📢</button>
+        </div>
+
+        <button class="btn btn-secondary" id="btnCloseChat" style="width: 100%; border-color: var(--border-light); background: rgba(255,255,255,0.03); margin-top: 10px;">Cancel</button>
       </div>
     </div>
 
@@ -176,6 +222,6 @@
   <!-- Main Player Logic -->
   <script src="js/player.js"></script>
   <!-- Credits Floater -->
-  <div class="creator-credits">Created by Nithin</div>
+  <div class="creator-credits text-shimmer">Created by Nithin</div>
 </body>
 </html>

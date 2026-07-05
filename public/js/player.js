@@ -56,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastTopCardId = null;
   let lastMyTurnState = false;
   let lastMyHandCount = 0;
+  let lastReceivedState = null;
+  let activePlayerMessages = new Map();
 
   // Sound Controller
   const btnMuteSound = document.getElementById('btnMuteSound');
@@ -102,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Receive individualized player state
   socket.on('player_state', (state) => {
+    lastReceivedState = state;
     myHand = state.hand || [];
     currentPlayers = state.players || [];
     isMyTurn = state.isMyTurn;
@@ -659,6 +662,39 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Chat Overlay Event Listeners
+  const btnChat = document.getElementById('btnChat');
+  const chatOverlay = document.getElementById('chatOverlay');
+  const btnCloseChat = document.getElementById('btnCloseChat');
+
+  if (btnChat && chatOverlay && btnCloseChat) {
+    btnChat.addEventListener('click', () => {
+      chatOverlay.classList.add('active');
+    });
+
+    btnCloseChat.addEventListener('click', () => {
+      chatOverlay.classList.remove('active');
+    });
+
+    // Handle emoji clicks
+    chatOverlay.querySelectorAll('.emoji-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const emoji = btn.getAttribute('data-emoji');
+        socket.emit('player_message', { roomCode, message: emoji, isEmoji: true });
+        chatOverlay.classList.remove('active');
+      });
+    });
+
+    // Handle phrase clicks
+    chatOverlay.querySelectorAll('.phrase-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const phrase = btn.getAttribute('data-phrase');
+        socket.emit('player_message', { roomCode, message: phrase, isEmoji: false });
+        chatOverlay.classList.remove('active');
+      });
+    });
+  }
+
   // Dismiss game over overlay when clicked
   if (btnExitGameOver) {
     btnExitGameOver.addEventListener('click', () => {
@@ -706,6 +742,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     gameOverOverlay.classList.add('active');
+  });
+
+  function refreshPlayers() {
+    if (lastReceivedState) {
+      renderRadialPlayers(lastReceivedState.players, lastReceivedState.currentPlayerIndex);
+    }
+  }
+
+  // Chat message listener
+  socket.on('player_message_received', (data) => {
+    if (window.gameSound && typeof window.gameSound.playChatNotification === 'function') {
+      window.gameSound.playChatNotification();
+    }
+
+    // Cancel existing timeout for this player
+    const existing = activePlayerMessages.get(data.name);
+    if (existing && existing.timeoutId) {
+      clearTimeout(existing.timeoutId);
+    }
+
+    // Set a timeout to clear the message after 3.5 seconds
+    const timeoutId = setTimeout(() => {
+      activePlayerMessages.delete(data.name);
+      refreshPlayers();
+    }, 3500);
+
+    // Save message info
+    activePlayerMessages.set(data.name, {
+      message: data.message,
+      isEmoji: data.isEmoji,
+      timeoutId: timeoutId
+    });
+
+    // Refresh players view
+    refreshPlayers();
   });
 
   // Catch notification events from room
@@ -929,8 +1000,16 @@ document.addEventListener('DOMContentLoaded', () => {
         wonOverlay = `<div class="won-overlay-tag" style="position: absolute; top: -14px; font-size: 0.65rem; background: var(--clr-yellow); color: #000; border-radius: 4px; padding: 2px 6px; font-weight: 700; font-family: var(--font-display); box-shadow: 0 0 10px rgba(229, 169, 0, 0.4); text-transform: uppercase; z-index: 10;">Finished</div>`;
       }
 
+      // Inject speech bubble if active
+      const activeMsg = activePlayerMessages.get(p.name);
+      let bubbleHtml = '';
+      if (activeMsg) {
+        bubbleHtml = `<div class="speech-bubble active ${activeMsg.isEmoji ? 'is-emoji' : ''}">${activeMsg.message}</div>`;
+      }
+
       playerDiv.innerHTML = `
         ${wonOverlay}
+        ${bubbleHtml}
         <div class="avatar-circle" style="${p.hasWon ? 'opacity: 0.6; border-color: var(--clr-yellow) !important;' : ''}">
           ${p.avatar}
           ${cardBadgeHtml}

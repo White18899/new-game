@@ -1029,6 +1029,28 @@ function processMultipleCardEffects(cards, room, chosenColor, targetPlayerName) 
     broadcastState(room);
   });
 
+  // Player Message / Chat / Reactions
+  socket.on('player_message', ({ roomCode, message, isEmoji }) => {
+    const room = rooms.get(roomCode);
+    if (!room) return;
+
+    const player = room.players.find(p => p.socketId === socket.id);
+    if (!player) return;
+
+    // Log the message in the game log list
+    addLog(room, `💬 ${player.name}: ${message}`);
+
+    // Broadcast the message event to all sockets in the room
+    io.to(roomCode).emit('player_message_received', {
+      socketId: socket.id,
+      name: player.name,
+      message: message,
+      isEmoji: !!isEmoji
+    });
+
+    broadcastState(room);
+  });
+
   // Toggle House Rule
   socket.on('toggle_house_rule', ({ roomCode, rule, value }) => {
     const room = rooms.get(roomCode);

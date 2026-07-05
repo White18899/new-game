@@ -361,4 +361,128 @@ span, button {
   color: #ffffff !important;
 }
 
+/* Speech Bubble Styles */
+.speech-bubble {
+  position: absolute;
+  bottom: 80px; /* placed above the avatar */
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  background: #ffffff;
+  color: #000000;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  box-shadow: 0 4px 15px rgba(255,255,255,0.2), 0 2px 5px rgba(0,0,0,0.5);
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: bottom center;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0;
+  border-style: solid;
+  border-color: #ffffff transparent;
+  display: block;
+  width: 0;
+}
+
+.speech-bubble.active {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+}
+
+.speech-bubble.is-emoji {
+  font-size: 2.2rem;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+.speech-bubble.is-emoji::after {
+  display: none;
+}
+
+/* Animations for speech bubble */
+@keyframes emojiBounce {
+  0% { transform: translateX(-50%) scale(0); }
+  30% { transform: translateX(-50%) scale(1.4); }
+  50% { transform: translateX(-50%) scale(0.9); }
+  70% { transform: translateX(-50%) scale(1.1); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+.speech-bubble.active.is-emoji {
+  animation: emojiBounce 0.4s ease-out forwards;
+}
+
+@keyframes bubblePop {
+  0% { transform: translateX(-50%) translateY(10px) scale(0.8); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+}
+
+.speech-bubble.active:not(.is-emoji) {
+  animation: bubblePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Chat overlay grid styling */
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.emoji-btn {
+  font-size: 2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+}
+
+.emoji-btn:hover {
+  transform: scale(1.25);
+}
+
+.emoji-btn:active {
+  transform: scale(0.9);
+}
+
+.chat-section-label {
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.phrase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.phrase-btn {
+  justify-content: center;
+  padding: 8px;
+  font-size: 0.85rem;
+}
+
+
 
