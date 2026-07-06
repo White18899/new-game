@@ -793,6 +793,18 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/index.html';
   });
 
+  socket.on('banned', (data) => {
+    alert(data.message || 'You have been banned from this server.');
+    window.location.href = '/index.html';
+  });
+
+  socket.on('connect_error', (err) => {
+    if (err.message === 'banned') {
+      alert('You are banned from this server.');
+      window.location.href = '/index.html';
+    }
+  });
+
   // Compact log formatter to show Name: Action (Color & Num)
   function formatLogCompact(logStr) {
     let msg = logStr.replace(/^\[\d{2}:\d{2}:\d{2}(?:\s*[APM]{2})?\]\s*/i, '').trim();

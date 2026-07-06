@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Uno Server</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #07070a;
+      --bg-card: rgba(13, 13, 18, 0.65);
+      --bg-card-hover: rgba(22, 22, 33, 0.8);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-color-active: rgba(255, 255, 255, 0.2);
+      
+      --text-primary: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      
+      --accent-color: #6366f1;
+      --accent-hover: #4f46e5;
+      
+      --clr-red: #ef4444;
+      --clr-red-hover: #dc2626;
+      --clr-green: #10b981;
+      --clr-yellow: #f59e0b;
+      
+      --font-display: 'Plus Jakarta Sans', sans-serif;
+      --font-sans: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.05) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(7, 7, 10, 0.8);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-color) 0%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-family: var(--font-display);
+    }
+
+    .badge-admin {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #818cf8;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      font-family: var(--font-sans);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--border-color-active);
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1400px;
+      width: 100%;
+      margin: 32px auto;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      flex: 1;
+    }
+
+    /* Summary Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-color);
+      opacity: 0.3;
+    }
+
+    .stat-card.active-connections::after { background: var(--accent-color); }
+    .stat-card.historical-records::after { background: var(--clr-green); }
+    .stat-card.banned-count::after { background: var(--clr-red); }
+
+    .stat-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-family: var(--font-display);
+    }
+
+    .stat-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: var(--font-display);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s ease;
+      min-width: 220px;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+
+    /* Tables */
+    .table-container {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.02);
+      padding: 14px 24px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    /* Badges & Indicators */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+
+    .badge-role-host {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fbbf24;
+    }
+
+    .badge-role-player {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #a5b4fc;
+    }
+
+    .badge-role-none {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .mono {
+      font-family: monospace;
+      font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* User Agent styling */
+    .ua-text {
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+
+    .ua-text:hover {
+      white-space: normal;
+      word-break: break-all;
+      max-width: 350px;
+    }
+
+    /* Buttons */
+    .btn-action-ban {
+      background: rgba(239, 110, 110, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action-ban:hover {
+      background: var(--clr-red);
+      color: #ffffff;
+      border-color: var(--clr-red);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-action-unban {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #6ee7b7;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action-unban:hover {
+      background: var(--clr-green);
+      color: #ffffff;
+      border-color: var(--clr-green);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Alert Banner */
+    #alertBanner {
+      padding: 12px 24px;
+      background: var(--clr-red);
+      color: #ffffff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-align: center;
+      display: none;
+      position: sticky;
+      top: 73px;
+      z-index: 99;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    /* Token Dialog/Prompt Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(7, 7, 10, 0.95);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      display: none; /* Controlled by JS */
+    }
+
+    .modal-card {
+      background: rgba(18, 18, 24, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      width: 420px;
+      max-width: 90%;
+      padding: 32px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      font-family: var(--font-display);
+    }
+
+    .modal-text {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .token-input-field {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-size: 1rem;
+      text-align: center;
+      letter-spacing: 0.1em;
+      outline: none;
+      font-family: monospace;
+    }
+
+    .token-input-field:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-primary {
+      background: var(--accent-color);
+      color: #ffffff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Ban Form Panel */
+    .ban-form-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 24px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 250px;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .form-group input {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      color: #ffffff;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent-color);
+    }
+
+    .form-submit-container {
+      display: flex;
+      align-items: flex-end;
+      min-width: 150px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 32px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Custom scrollbar inside panel list */
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Alert Bar -->
+  <div id="alertBanner"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-logo">UNO BOARD</span>
+      <span class="badge-admin">ADMIN CONSOLE</span>
+    </div>
+    <div class="header-actions">
+      <span id="connectionStatus" style="font-size: 0.85rem; color: var(--clr-green); display: flex; align-items: center; gap: 6px;">
+        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--clr-green);"></span>
+        Server Connected
+      </span>
+      <button class="btn-secondary" onclick="logoutAdmin()">Change Token</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    
+    <!-- Summary Stats -->
+    <section class="stats-grid">
+      <div class="stat-card active-connections">
+        <span class="stat-title">Active Sockets</span>
+        <span class="stat-value" id="countActive">0</span>
+        <span class="stat-desc">Devices connected to Server right now</span>
+      </div>
+      <div class="stat-card historical-records">
+        <span class="stat-title">Logged Players</span>
+        <span class="stat-value" id="countRecords">0</span>
+        <span class="stat-desc">Historical player logs registered on server</span>
+      </div>
+      <div class="stat-card banned-count">
+        <span class="stat-title">Banned Entities</span>
+        <span class="stat-value" id="countBanned">0</span>
+        <span class="stat-desc">Banned IPs and MAC addresses</span>
+      </div>
+    </section>
+
+    <!-- Manual Ban Form -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">🛡️ Enforce Manual Ban</h2>
+      </div>
+      <div class="ban-form-grid">
+        <div class="form-group">
+          <label for="banIpInput">IP Address</label>
+          <input type="text" id="banIpInput" placeholder="e.g. 192.168.31.42">
+        </div>
+        <div class="form-group">
+          <label for="banMacInput">MAC Address</label>
+          <input type="text" id="banMacInput" placeholder="e.g. ec-91-61-16-1f-5e">
+        </div>
+        <div class="form-submit-container">
+          <button class="btn-primary" onclick="submitManualBan()" style="width: 100%;">Ban Target</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Active connections panel -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">📡 Active Connections</h2>
+        <div class="panel-actions">
+          <input type="text" class="search-input" id="searchActive" placeholder="Search sockets..." oninput="renderAll()">
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Player Name</th>
+              <th>Role</th>
+              <th>Room</th>
+              <th>IP Address</th>
+              <th>MAC Address</th>
+              <th>User Agent</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="activeTableBody">
+            <!-- Dynamic content -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Historical Player Log -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">📜 Historical Player Records</h2>
+        <div class="panel-actions">
+          <input type="text" class="search-input" id="searchRecords" placeholder="Search historical logs..." oninput="renderAll()">
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>IP Address</th>
+              <th>MAC Address</th>
+              <th>Browser / User Agent</th>
+              <th>Last Seen</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTableBody">
+            <!-- Dynamic content -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Ban List Panel -->
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">🚫 Active Ban List</h2>
+      </div>
+      <div class="table-container" style="max-height: 300px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Address / Identifier</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="bansTableBody">
+            <!-- Dynamic content -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Dialog Overlay for Token Input -->
+  <div class="modal-overlay" id="tokenModal">
+    <div class="modal-card">
+      <h2 class="modal-title">🔐 Enter Admin Access Token</h2>
+      <p class="modal-text">To secure client connection data, accessing player IPs and MAC addresses requires authorization.</p>
+      <input type="password" class="token-input-field" id="tokenField" placeholder="ADMIN TOKEN" onkeydown="if(event.key === 'Enter') submitToken()">
+      <button class="btn-primary" onclick="submitToken()">Access Dashboard</button>
+      <div id="modalError" style="color: var(--clr-red); font-size: 0.85rem; display: none;">Invalid Token, try again.</div>
+    </div>
+  </div>
+
+  <script>
+    // State Store
+    let dataState = {
+      activeSockets: [],
+      records: [],
+      bans: { bannedIps: [], bannedMacs: [] }
+    };
+
+    // Load initial token from URL or localStorage
+    function init() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenFromUrl = urlParams.get('token');
+
+      if (tokenFromUrl) {
+        localStorage.setItem('unoAdminToken', tokenFromUrl);
+        // Clear token from URL to keep clean history
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      fetchData();
+    }
+
+    function getStoredToken() {
+      return localStorage.getItem('unoAdminToken') || '';
+    }
+
+    // Load entire status info from backend
+    async function fetchData() {
+      const token = getStoredToken();
+      
+      try {
+        const response = await fetch(`/admin/api/status?token=${encodeURIComponent(token)}`);
+        
+        if (response.status === 401) {
+          showTokenModal();
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error('Network error loading data');
+        }
+
+        const data = await response.json();
+        if (data.status === 'ok') {
+          hideTokenModal();
+          dataState = data;
+          renderAll();
+        }
+      } catch (err) {
+        showGlobalAlert('Could not connect to server or load admin resources. Is server running?');
+        console.error(err);
+      }
+    }
+
+    // UI Redraw
+    function renderAll() {
+      renderActiveConnections();
+      renderRecords();
+      renderBanList();
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('countActive').innerText = dataState.activeSockets.length;
+      document.getElementById('countRecords').innerText = dataState.records.length;
+      
+      const banCount = dataState.bans.bannedIps.length + dataState.bans.bannedMacs.length;
+      document.getElementById('countBanned').innerText = banCount;
+    }
+
+    function renderActiveConnections() {
+      const tbody = document.getElementById('activeTableBody');
+      const searchQuery = document.getElementById('searchActive').value.toLowerCase().trim();
+      tbody.innerHTML = '';
+
+      const filtered = dataState.activeSockets.filter(s => {
+        return s.playerName.toLowerCase().includes(searchQuery) ||
+               s.ip.toLowerCase().includes(searchQuery) ||
+               s.mac.toLowerCase().includes(searchQuery) ||
+               s.roomCode.toLowerCase().includes(searchQuery) ||
+               s.role.toLowerCase().includes(searchQuery);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No active connections found matching query.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(s => {
+        const isHost = s.role === 'host';
+        const roleClass = isHost ? 'badge-role-host' : (s.role === 'player' ? 'badge-role-player' : 'badge-role-none');
+        
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-weight: 600;">${escapeHtml(s.playerName)}</td>
+            <td><span class="badge ${roleClass}">${s.role}</span></td>
+            <td><span class="mono">${s.roomCode !== 'none' ? s.roomCode : '-'}</span></td>
+            <td><span class="mono">${s.ip}</span></td>
+            <td><span class="mono">${s.mac}</span></td>
+            <td><div class="ua-text" title="${escapeHtml(s.userAgent)}">${escapeHtml(s.userAgent)}</div></td>
+            <td>
+              <button class="btn-action-ban" onclick="banEntity('${s.ip}', '${s.mac}')">Ban Player</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Escape UA details
+    function renderRecords() {
+      const tbody = document.getElementById('recordsTableBody');
+      const searchQuery = document.getElementById('searchRecords').value.toLowerCase().trim();
+      tbody.innerHTML = '';
+
+      const filtered = dataState.records.filter(r => {
+        return r.username.toLowerCase().includes(searchQuery) ||
+               r.ip.toLowerCase().includes(searchQuery) ||
+               r.mac.toLowerCase().includes(searchQuery);
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No player records recorded on server.</td></tr>`;
+        return;
+      }
+
+      // Sort by lastSeen descending
+      filtered.sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
+
+      filtered.forEach(r => {
+        const dateStr = new Date(r.lastSeen).toLocaleString();
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-weight: 600;">${escapeHtml(r.username)}</td>
+            <td><span class="mono">${r.ip}</span></td>
+            <td><span class="mono">${r.mac}</span></td>
+            <td><div class="ua-text" title="${escapeHtml(r.userAgent)}">${escapeHtml(r.userAgent)}</div></td>
+            <td style="font-size: 0.85rem; color: var(--text-secondary);">${dateStr}</td>
+            <td style="display: flex; gap: 8px;">
+              <button class="btn-action-ban" onclick="banEntity('${r.ip}', '')">Ban IP</button>
+              <button class="btn-action-ban" onclick="banEntity('', '${r.mac}')">Ban MAC</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderBanList() {
+      const tbody = document.getElementById('bansTableBody');
+      tbody.innerHTML = '';
+
+      const ipBans = dataState.bans.bannedIps || [];
+      const macBans = dataState.bans.bannedMacs || [];
+
+      if (ipBans.length === 0 && macBans.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="empty-state">Ban list is empty.</td></tr>`;
+        return;
+      }
+
+      ipBans.forEach(ip => {
+        tbody.innerHTML += `
+          <tr>
+            <td><span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.2)">IP Address</span></td>
+            <td><span class="mono">${ip}</span></td>
+            <td>
+              <button class="btn-action-unban" onclick="unbanEntity('${ip}', '')">Unban</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      macBans.forEach(mac => {
+        tbody.innerHTML += `
+          <tr>
+            <td><span class="badge" style="background: rgba(167, 139, 250, 0.15); color: #c084fc; border: 1px solid rgba(167, 139, 250, 0.2)">MAC Address</span></td>
+            <td><span class="mono">${mac}</span></td>
+            <td>
+              <button class="btn-action-unban" onclick="unbanEntity('', '${mac}')">Unban</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // Ban / Unban Calls
+    async function banEntity(ip, mac) {
+      if (!confirm(`Are you sure you want to ban: ${ip ? 'IP: ' + ip : ''} ${mac ? 'MAC: ' + mac : ''}?`)) {
+        return;
+      }
+
+      const token = getStoredToken();
+      try {
+        const response = await fetch('/admin/api/ban', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': token
+          },
+          body: JSON.stringify({ ip, mac })
+        });
+
+        const res = await response.json();
+        if (response.ok && res.status === 'ok') {
+          fetchData();
+        } else {
+          alert(`Error banning player: ${res.message}`);
+        }
+      } catch (err) {
+        alert('Network error attempting to ban player.');
+      }
+    }
+
+    async function unbanEntity(ip, mac) {
+      const token = getStoredToken();
+      try {
+        const response = await fetch('/admin/api/unban', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': token
+          },
+          body: JSON.stringify({ ip, mac })
+        });
+
+        const res = await response.json();
+        if (response.ok && res.status === 'ok') {
+          fetchData();
+        } else {
+          alert(`Error unbanning: ${res.message}`);
+        }
+      } catch (err) {
+        alert('Network error attempting to unban.');
+      }
+    }
+
+    function submitManualBan() {
+      const ip = document.getElementById('banIpInput').value.trim();
+      const mac = document.getElementById('banMacInput').value.trim();
+
+      if (!ip && !mac) {
+        alert('Please fill out at least one parameter (IP or MAC) to enforce a ban.');
+        return;
+      }
+
+      banEntity(ip, mac);
+      document.getElementById('banIpInput').value = '';
+      document.getElementById('banMacInput').value = '';
+    }
+
+    // Token Modal Controller
+    function showTokenModal() {
+      document.getElementById('tokenModal').style.display = 'flex';
+      document.getElementById('tokenField').focus();
+    }
+
+    function hideTokenModal() {
+      document.getElementById('tokenModal').style.display = 'none';
+      document.getElementById('modalError').style.display = 'none';
+    }
+
+    function submitToken() {
+      const val = document.getElementById('tokenField').value.trim();
+      if (!val) return;
+      localStorage.setItem('unoAdminToken', val);
+      document.getElementById('tokenField').value = '';
+      fetchData();
+    }
+
+    function logoutAdmin() {
+      localStorage.removeItem('unoAdminToken');
+      showTokenModal();
+    }
+
+    // Helpers
+    function showGlobalAlert(msg) {
+      const banner = document.getElementById('alertBanner');
+      banner.innerText = msg;
+      banner.style.display = 'block';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+
+    // Start
+    window.onload = init;
+  </script>
+</body>
+</html>

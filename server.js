@@ -3,15 +3,301 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
+const { exec } = require('child_process');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Enable trust proxy for Render load balancer real IP detection
+app.enable('trust proxy');
+
 const PORT = process.env.PORT || 3000;
+
+// Path configuration for database files (support Render Persistent Disks)
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const RECORDS_FILE = path.join(DATA_DIR, 'player_records.json');
+const BANS_FILE = path.join(DATA_DIR, 'banned_players.json');
+const CONFIG_FILE = path.join(DATA_DIR, 'admin_config.json');
+
+// Initialize database files if they do not exist
+try {
+  if (!fs.existsSync(RECORDS_FILE)) {
+    fs.writeFileSync(RECORDS_FILE, JSON.stringify([], null, 2));
+  }
+  if (!fs.existsSync(BANS_FILE)) {
+    fs.writeFileSync(BANS_FILE, JSON.stringify({ bannedIps: [], bannedMacs: [] }, null, 2));
+  }
+} catch (err) {
+  console.error('Warning: Could not initialize storage files. Persistent records/bans might be unavailable: ', err.message);
+}
+
+// Admin Token initialization (support setting ADMIN_TOKEN environment variable directly in Render)
+let adminToken = process.env.ADMIN_TOKEN || '';
+if (!adminToken && fs.existsSync(CONFIG_FILE)) {
+  try {
+    const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    adminToken = config.adminToken;
+  } catch (err) {
+    console.error('Error reading admin_config.json, generating a new token...', err);
+  }
+}
+if (!adminToken) {
+  adminToken = Math.random().toString(36).substring(2, 10).toUpperCase(); // 8-char random token
+  try {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify({ adminToken, port: PORT }, null, 2));
+  } catch (err) {
+    console.error('Warning: Could not save admin_config.json: ', err.message);
+  }
+}
+
+console.log(`[ADMIN] Admin token is: ${adminToken}`);
+console.log(`[ADMIN] Access the Admin panel at http://localhost:${PORT}/admin.html?token=${adminToken}`);
+
+// Express middleware for JSON parsing
+app.use(express.json());
+
+// Asynchronously retrieve MAC address from ARP cache for local IP addresses
+function getMACFromIP(ip) {
+  return new Promise((resolve) => {
+    if (ip === '127.0.0.1' || ip === '::1' || ip === 'localhost') {
+      resolve('localhost-mac');
+      return;
+    }
+
+    let cleanIp = ip;
+    if (ip.startsWith('::ffff:')) {
+      cleanIp = ip.substring(7);
+    }
+
+    exec('arp -a', (err, stdout, stderr) => {
+      if (err) {
+        resolve('unknown');
+        return;
+      }
+      const lines = stdout.split('\n');
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          const entryIp = parts[0];
+          const entryMac = parts[1];
+          // Match standard IP address and MAC formats (xx-xx-xx-xx-xx-xx or xx:xx:xx:xx:xx:xx)
+          if (entryIp === cleanIp && /([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})/.test(entryMac)) {
+            resolve(entryMac.toLowerCase().replace(/:/g, '-'));
+            return;
+          }
+        }
+      }
+      resolve('unknown');
+    });
+  });
+}
+
+function loadPlayerRecords() {
+  try {
+    return JSON.parse(fs.readFileSync(RECORDS_FILE, 'utf8'));
+  } catch (err) {
+    return [];
+  }
+}
+
+function savePlayerRecords(records) {
+  fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
+}
+
+function loadBannedPlayers() {
+  try {
+    return JSON.parse(fs.readFileSync(BANS_FILE, 'utf8'));
+  } catch (err) {
+    return { bannedIps: [], bannedMacs: [] };
+  }
+}
+
+function saveBannedPlayers(bans) {
+  fs.writeFileSync(BANS_FILE, JSON.stringify(bans, null, 2));
+}
+
+function recordPlayer(playerName, ip, mac, userAgent) {
+  const records = loadPlayerRecords();
+  const existing = records.find(r => r.ip === ip && r.mac === mac && r.username.toLowerCase() === playerName.toLowerCase());
+  
+  if (existing) {
+    existing.lastSeen = new Date().toISOString();
+    existing.userAgent = userAgent;
+  } else {
+    records.push({
+      username: playerName,
+      ip,
+      mac,
+      userAgent,
+      lastSeen: new Date().toISOString()
+    });
+  }
+  savePlayerRecords(records);
+}
+
+function isBanned(ip, mac) {
+  const bans = loadBannedPlayers();
+  
+  let cleanIp = ip;
+  if (ip.startsWith('::ffff:')) {
+    cleanIp = ip.substring(7);
+  }
+  
+  const cleanMac = mac ? mac.toLowerCase().replace(/:/g, '-') : '';
+
+  const isIpBanned = bans.bannedIps.includes(cleanIp);
+  const isMacBanned = cleanMac && cleanMac !== 'unknown' && cleanMac !== 'localhost-mac' && bans.bannedMacs.includes(cleanMac);
+
+  return isIpBanned || isMacBanned;
+}
+
+function isLocalRequest(req) {
+  const ip = req.ip || req.connection.remoteAddress || '';
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+}
+
+function checkAdminAuth(req, res, next) {
+  if (isLocalRequest(req)) {
+    return next();
+  }
+  
+  const token = req.headers['x-admin-token'] || req.query.token;
+  if (token === adminToken) {
+    return next();
+  }
+  
+  res.status(401).json({ status: 'error', message: 'Unauthorized. Admin token is invalid or missing.' });
+}
 
 // Host static files from 'public'
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Admin API Routes
+app.get('/admin/api/status', checkAdminAuth, (req, res) => {
+  const activeSockets = [];
+  
+  io.sockets.sockets.forEach(socket => {
+    let playerRoom = null;
+    let playerObj = null;
+    
+    for (const [code, room] of rooms.entries()) {
+      if (room.hostSocketId === socket.id) {
+        playerRoom = { code, role: 'host' };
+        break;
+      }
+      const player = room.players.find(p => p.socketId === socket.id);
+      if (player) {
+        playerRoom = { code, role: 'player' };
+        playerObj = player;
+        break;
+      }
+    }
+    
+    activeSockets.push({
+      socketId: socket.id,
+      ip: socket.clientIP || 'unknown',
+      mac: socket.clientMAC || 'unknown',
+      userAgent: socket.request.headers['user-agent'] || 'unknown',
+      roomCode: playerRoom ? playerRoom.code : 'none',
+      role: playerRoom ? playerRoom.role : 'none',
+      playerName: playerObj ? playerObj.name : (playerRoom && playerRoom.role === 'host' ? 'Host' : 'Lobby')
+    });
+  });
+
+  res.json({
+    status: 'ok',
+    activeSockets,
+    records: loadPlayerRecords(),
+    bans: loadBannedPlayers()
+  });
+});
+
+app.post('/admin/api/ban', checkAdminAuth, (req, res) => {
+  const { ip, mac } = req.body;
+  if (!ip && !mac) {
+    return res.status(400).json({ status: 'error', message: 'IP or MAC is required to ban.' });
+  }
+
+  const bans = loadBannedPlayers();
+  let bannedSomething = false;
+
+  if (ip) {
+    let cleanIp = ip.trim();
+    if (cleanIp.startsWith('::ffff:')) {
+      cleanIp = cleanIp.substring(7);
+    }
+    if (cleanIp && !bans.bannedIps.includes(cleanIp)) {
+      bans.bannedIps.push(cleanIp);
+      bannedSomething = true;
+    }
+  }
+
+  if (mac) {
+    const cleanMac = mac.trim().toLowerCase().replace(/:/g, '-');
+    if (cleanMac && cleanMac !== 'unknown' && cleanMac !== 'localhost-mac' && !bans.bannedMacs.includes(cleanMac)) {
+      bans.bannedMacs.push(cleanMac);
+      bannedSomething = true;
+    }
+  }
+
+  if (bannedSomething) {
+    saveBannedPlayers(bans);
+    console.log(`[ADMIN] Banned IP: ${ip || 'none'}, MAC: ${mac || 'none'}`);
+
+    // Disconnect active sockets that match the banned criteria
+    io.sockets.sockets.forEach(socket => {
+      const socketIp = socket.clientIP || '';
+      const socketMac = socket.clientMAC || '';
+      
+      const targetIpClean = ip ? (ip.startsWith('::ffff:') ? ip.substring(7) : ip) : '';
+      const ipMatch = ip && socketIp === targetIpClean;
+      const macMatch = mac && socketMac.toLowerCase().replace(/:/g, '-') === mac.trim().toLowerCase().replace(/:/g, '-');
+      
+      if (ipMatch || macMatch) {
+        console.log(`[ADMIN] Disconnecting banned socket: ${socket.id}`);
+        socket.emit('banned', { message: 'You have been banned from this server.' });
+        socket.disconnect(true);
+      }
+    });
+
+    res.json({ status: 'ok', message: 'Player banned successfully and active connections dropped.' });
+  } else {
+    res.json({ status: 'ok', message: 'IP/MAC already banned.' });
+  }
+});
+
+app.post('/admin/api/unban', checkAdminAuth, (req, res) => {
+  const { ip, mac } = req.body;
+  const bans = loadBannedPlayers();
+  let unbannedSomething = false;
+
+  if (ip) {
+    const index = bans.bannedIps.indexOf(ip.trim());
+    if (index !== -1) {
+      bans.bannedIps.splice(index, 1);
+      unbannedSomething = true;
+    }
+  }
+
+  if (mac) {
+    const cleanMac = mac.trim().toLowerCase().replace(/:/g, '-');
+    const index = bans.bannedMacs.indexOf(cleanMac);
+    if (index !== -1) {
+      bans.bannedMacs.splice(index, 1);
+      unbannedSomething = true;
+    }
+  }
+
+  if (unbannedSomething) {
+    saveBannedPlayers(bans);
+    console.log(`[ADMIN] Unbanned IP: ${ip || 'none'}, MAC: ${mac || 'none'}`);
+    res.json({ status: 'ok', message: 'Unbanned successfully.' });
+  } else {
+    res.status(400).json({ status: 'error', message: 'Banned target not found.' });
+  }
+});
 
 // Get local network IP for player connections
 let localIP = 'localhost';
@@ -424,6 +710,34 @@ function recycleDiscardPile(room) {
   addLog(room, `Deck was empty. Shuffled discard pile back into the deck.`);
 }
 
+// Middleware to resolve IP and MAC, and check bans
+io.use(async (socket, next) => {
+  // Extract real IP when behind load balancers/proxies (e.g. Render)
+  const forwarded = socket.handshake.headers['x-forwarded-for'];
+  const ip = forwarded ? forwarded.split(',')[0].trim() : (socket.handshake.address || socket.request.connection?.remoteAddress || '');
+  let cleanIp = ip;
+  if (ip.startsWith('::ffff:')) {
+    cleanIp = ip.substring(7);
+  }
+  
+  socket.clientIP = cleanIp;
+  
+  // Resolve MAC address asynchronously
+  try {
+    socket.clientMAC = await getMACFromIP(cleanIp);
+  } catch (err) {
+    socket.clientMAC = 'unknown';
+  }
+  
+  // Check ban list
+  if (isBanned(socket.clientIP, socket.clientMAC)) {
+    console.log(`[BAN] Rejected connection from banned client IP: ${socket.clientIP}, MAC: ${socket.clientMAC}`);
+    return next(new Error('banned'));
+  }
+  
+  next();
+});
+
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
 
@@ -505,6 +819,14 @@ io.on('connection', (socket) => {
       existingPlayer.online = true;
       socket.join(upperCode);
       addLog(room, `Player ${existingPlayer.name} reconnected to game.`);
+      
+      recordPlayer(
+        existingPlayer.name,
+        socket.clientIP || 'unknown',
+        socket.clientMAC || 'unknown',
+        socket.request.headers['user-agent'] || 'unknown'
+      );
+
       callback({ status: 'ok', roomCode: upperCode });
       broadcastState(room);
       return;
@@ -531,6 +853,13 @@ io.on('connection', (socket) => {
     room.players.push(player);
     socket.join(upperCode);
     addLog(room, `Player ${player.name} joined the game lobby.`);
+    
+    recordPlayer(
+      player.name,
+      socket.clientIP || 'unknown',
+      socket.clientMAC || 'unknown',
+      socket.request.headers['user-agent'] || 'unknown'
+    );
     
     callback({ status: 'ok', roomCode: upperCode });
     broadcastState(room);

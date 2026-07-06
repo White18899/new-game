@@ -624,5 +624,17 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = '/index.html';
   });
 
+  socket.on('banned', (data) => {
+    alert(data.message || 'You have been banned from this server.');
+    window.location.href = '/index.html';
+  });
+
+  socket.on('connect_error', (err) => {
+    if (err.message === 'banned') {
+      alert('You are banned from this server.');
+      window.location.href = '/index.html';
+    }
+  });
+
 
 });
