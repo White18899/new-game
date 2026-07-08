@@ -25,14 +25,14 @@
     "ip": "127.0.0.1",
     "mac": "localhost-mac",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-    "lastSeen": "2026-07-08T17:10:51.111Z"
+    "lastSeen": "2026-07-08T18:21:25.767Z"
   },
   {
     "username": "Host (Host)",
     "ip": "127.0.0.1",
     "mac": "localhost-mac",
-    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-    "lastSeen": "2026-07-08T17:30:33.675Z"
+    "userAgent": "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
+    "lastSeen": "2026-07-08T18:21:15.657Z"
   },
   {
     "username": "nithin (Host)",
@@ -61,5 +61,12 @@
     "mac": "localhost-mac",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
     "lastSeen": "2026-07-08T17:23:39.733Z"
+  },
+  {
+    "username": "Host (Host)D",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T17:42:41.949Z"
   }
 ]

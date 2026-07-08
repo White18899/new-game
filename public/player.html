@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="css/player.css">
 </head>
 <body>
+  <!-- Ambient background glow orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
 
   <div class="player-app">
     <!-- Top HUD Info / Nav Bar -->
@@ -124,6 +128,25 @@
         <button class="btn btn-callout" id="btnCallOut" style="display: none;">CALL OUT!</button>
       </div>
     </main>
+
+    <!-- Sorting Controls Bar -->
+    <div class="sorting-controls-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 0 16px; margin-bottom: 4px; margin-top: 4px;">
+      <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Your Hand</span>
+      <div style="display: flex; gap: 8px;">
+        <button id="btnSortColor" style="font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #fff; transition: all 0.2s;">
+          Color 
+          <span style="display: inline-flex; gap: 2.5px; align-items: center;">
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--clr-red);"></span>
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--clr-blue);"></span>
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: var(--clr-green);"></span>
+          </span>
+        </button>
+        <button id="btnSortValue" style="font-family: var(--font-display); font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #fff; transition: all 0.2s;">
+          Value 
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.85;"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="16" y2="12"></line><line x1="4" y1="18" x2="12" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
 
     <!-- Scrollable Hand of Cards -->
     <div class="player-hand-container">

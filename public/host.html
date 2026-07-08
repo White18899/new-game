@@ -8,6 +8,10 @@
   <link rel="stylesheet" href="css/host.css">
 </head>
 <body>
+  <!-- Ambient background glow orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
 
   <div class="host-app">
     <!-- Top Bar -->
@@ -144,22 +148,29 @@
           <p class="section-desc">Design custom rule cards to shuffle into the deck.</p>
           
           <div class="creator-preview-container">
-            <div class="uno-card wild custom-card" id="cardPreview">
-              <span class="card-corner top" id="previewCornerVal">?</span>
-              <div class="card-center">
-                <span class="card-center-val" id="previewCenterVal">?</span>
-              </div>
-              <span class="card-corner bottom" id="previewCornerVal2">?</span>
-            </div>
-
             <div class="creator-form">
               <div class="form-group">
                 <label for="custName">Card Name</label>
                 <input type="text" id="custName" placeholder="e.g. Draw 5 Skip" value="Draw 5 Skip">
               </div>
               <div class="form-group">
+                <label>Symbol Type</label>
+                <div style="display: flex; gap: 16px; margin-bottom: 4px;">
+                  <label style="text-transform: none; font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary);">
+                    <input type="radio" name="symbolType" value="text" checked style="width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: white;"> Text Symbol
+                  </label>
+                  <label style="text-transform: none; font-size: 0.82rem; font-weight: 500; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-primary);">
+                    <input type="radio" name="symbolType" value="image" style="width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: white;"> Image Upload
+                  </label>
+                </div>
+              </div>
+              <div class="form-group" id="symbolTextInputGroup">
                 <label for="custSymbol">Symbol (Corner/Center)</label>
                 <input type="text" id="custSymbol" placeholder="e.g. +5" value="+5" maxlength="3">
+              </div>
+              <div class="form-group none" id="symbolImageInputGroup">
+                <label for="custSymbolFile">Upload Symbol Image</label>
+                <input type="file" id="custSymbolFile" accept="image/*" style="border: 1px dashed rgba(255,255,255,0.15) !important; padding: 8px !important; background: transparent !important; cursor: pointer;">
               </div>
               <div class="form-group">
                 <label for="custColor">Card Color</label>
@@ -194,6 +205,15 @@
                 </div>
               </div>
               <button class="btn btn-secondary btn-sm" id="btnAddCustomCard" style="width: 100%; margin-top: 10px;">Add Card to Deck</button>
+            </div>
+
+            <!-- Real-time Preview on Right -->
+            <div class="uno-card wild custom-card" id="cardPreview" style="margin-left: 20px; flex-shrink: 0; align-self: center;">
+              <span class="card-corner top" id="previewCornerVal">?</span>
+              <div class="card-center">
+                <span class="card-center-val" id="previewCenterVal">?</span>
+              </div>
+              <span class="card-corner bottom" id="previewCornerVal2">?</span>
             </div>
           </div>
 

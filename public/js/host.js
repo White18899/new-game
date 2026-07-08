@@ -92,6 +92,45 @@ document.addEventListener('DOMContentLoaded', () => {
   const previewCenterVal = document.getElementById('previewCenterVal');
   const customCardCountVal = document.getElementById('customCardCountVal');
 
+  // Custom Card Creator Image Symbol Targets
+  const symbolTypeRadios = document.getElementsByName('symbolType');
+  const symbolTextInputGroup = document.getElementById('symbolTextInputGroup');
+  const symbolImageInputGroup = document.getElementById('symbolImageInputGroup');
+  const custSymbolFile = document.getElementById('custSymbolFile');
+  let uploadedSymbolImgData = '';
+
+  function renderCardContent(displaySym, extraClass, cornerFontSizeStyle = '') {
+    const isImg = (typeof displaySym === 'string') && (
+      displaySym.startsWith('data:image/') || 
+      displaySym.startsWith('http://') || 
+      displaySym.startsWith('https://') || 
+      displaySym.startsWith('/') || 
+      displaySym.endsWith('.png') || 
+      displaySym.endsWith('.jpg') || 
+      displaySym.endsWith('.jpeg') || 
+      displaySym.endsWith('.webp') || 
+      displaySym.endsWith('.svg')
+    );
+
+    if (isImg) {
+      return `
+        <span class="card-corner top" ${cornerFontSizeStyle}><img src="${displaySym}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px;"></span>
+        <div class="card-center">
+          <img src="${displaySym}" style="width: 38px; height: 38px; object-fit: contain; border-radius: 4px;">
+        </div>
+        <span class="card-corner bottom" ${cornerFontSizeStyle}><img src="${displaySym}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px; transform: rotate(180deg);"></span>
+      `;
+    }
+
+    return `
+      <span class="card-corner top" ${cornerFontSizeStyle}>${displaySym || ''}</span>
+      <div class="card-center">
+        <span class="card-center-val ${extraClass}">${displaySym}</span>
+      </div>
+      <span class="card-corner bottom" ${cornerFontSizeStyle}>${displaySym || ''}</span>
+    `;
+  }
+
   let localCustomCardsCount = 0;
   let currentTopCard = null;
   let lastTopCardId = null;
@@ -191,10 +230,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Real-time Preview updates
   function updatePreview() {
-    const symbol = custSymbol.value.trim() || '?';
-    previewCornerVal.innerText = symbol;
-    previewCornerVal2.innerText = symbol;
-    previewCenterVal.innerText = symbol;
+    const activeRadio = Array.from(symbolTypeRadios).find(r => r.checked);
+    const useImage = activeRadio && activeRadio.value === 'image';
+    
+    let symbol = '?';
+    if (useImage) {
+      symbol = uploadedSymbolImgData || 'data:image/svg+xml;utf8,<svg fill=\'none\' stroke=\'white\' stroke-opacity=\'0.2\' stroke-width=\'2\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><path d=\'M21 15l-5-5L5 21\'/></svg>';
+    } else {
+      symbol = custSymbol.value.trim() || '?';
+    }
+
+    // Render inner content dynamically based on whether it is an image
+    cardPreview.innerHTML = renderCardContent(symbol, '');
 
     // Remove old colors
     cardPreview.className = 'uno-card custom-card';
@@ -206,6 +253,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Radio toggles change
+  symbolTypeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.value === 'image') {
+        symbolTextInputGroup.classList.add('none');
+        symbolImageInputGroup.classList.remove('none');
+      } else {
+        symbolImageInputGroup.classList.add('none');
+        symbolTextInputGroup.classList.remove('none');
+      }
+      updatePreview();
+    });
+  });
+
+  // Image reader
+  custSymbolFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        uploadedSymbolImgData = event.target.result;
+        updatePreview();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
   [custName, custSymbol, custColor].forEach(el => {
     el.addEventListener('input', updatePreview);
   });
@@ -215,7 +289,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Emit Custom Card
   btnAddCustomCard.addEventListener('click', () => {
     const name = custName.value.trim() || 'Custom Action';
-    const symbol = custSymbol.value.trim() || '*';
+    const activeRadio = Array.from(symbolTypeRadios).find(r => r.checked);
+    const useImage = activeRadio && activeRadio.value === 'image';
+    
+    let symbol = '*';
+    if (useImage) {
+      if (!uploadedSymbolImgData) {
+        alert('Please upload a symbol image first.');
+        return;
+      }
+      symbol = uploadedSymbolImgData;
+    } else {
+      symbol = custSymbol.value.trim() || '*';
+    }
     const color = custColor.value;
 
     const actions = [];
@@ -258,6 +344,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset fields partly
     custName.value = 'Draw 5 Skip';
     custSymbol.value = '+5';
+    custSymbolFile.value = '';
+    uploadedSymbolImgData = '';
+    symbolTypeRadios[0].checked = true;
+    symbolImageInputGroup.classList.add('none');
+    symbolTextInputGroup.classList.remove('none');
     effectDraw.checked = true;
     effectDrawQty.value = 5;
     effectSkip.checked = true;
@@ -536,11 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       cardEl.innerHTML = `
-        <span class="card-corner top">${displaySym || ''}</span>
-        <div class="card-center">
-          <span class="card-center-val ${extraClass}">${displaySym}</span>
-        </div>
-        <span class="card-corner bottom">${displaySym || ''}</span>
+        ${renderCardContent(displaySym, extraClass)}
         ${c.type === 'custom' ? `<div class="card-details-tooltip"><b>${c.name}</b><br>${c.description || 'Custom Card'}</div>` : ''}
       `;
 

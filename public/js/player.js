@@ -28,6 +28,38 @@ document.addEventListener('DOMContentLoaded', () => {
   // Connect socket
   const socket = io();
 
+  function renderCardContent(displaySym, extraClass, cornerFontSizeStyle = '') {
+    const isImg = (typeof displaySym === 'string') && (
+      displaySym.startsWith('data:image/') || 
+      displaySym.startsWith('http://') || 
+      displaySym.startsWith('https://') || 
+      displaySym.startsWith('/') || 
+      displaySym.endsWith('.png') || 
+      displaySym.endsWith('.jpg') || 
+      displaySym.endsWith('.jpeg') || 
+      displaySym.endsWith('.webp') || 
+      displaySym.endsWith('.svg')
+    );
+
+    if (isImg) {
+      return `
+        <span class="card-corner top" ${cornerFontSizeStyle}><img src="${displaySym}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px;"></span>
+        <div class="card-center">
+          <img src="${displaySym}" style="width: 38px; height: 38px; object-fit: contain; border-radius: 4px;">
+        </div>
+        <span class="card-corner bottom" ${cornerFontSizeStyle}><img src="${displaySym}" style="width: 14px; height: 14px; object-fit: contain; border-radius: 2px; transform: rotate(180deg);"></span>
+      `;
+    }
+
+    return `
+      <span class="card-corner top" ${cornerFontSizeStyle}>${displaySym || ''}</span>
+      <div class="card-center">
+        <span class="card-center-val ${extraClass}">${displaySym}</span>
+      </div>
+      <span class="card-corner bottom" ${cornerFontSizeStyle}>${displaySym || ''}</span>
+    `;
+  }
+
   // Elements
   const hudAvatar = document.getElementById('hudAvatar');
   const hudName = document.getElementById('hudName');
@@ -43,6 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnPlaySelected = document.getElementById('btnPlaySelected');
   const btnPassTurn = document.getElementById('btnPassTurn');
   const playerHand = document.getElementById('playerHand');
+  const btnSortColor = document.getElementById('btnSortColor');
+  const btnSortValue = document.getElementById('btnSortValue');
   const colorPickerOverlay = document.getElementById('colorPickerOverlay');
   const gameOverOverlay = document.getElementById('gameOverOverlay');
   const gameOverStandings = document.getElementById('gameOverStandings');
@@ -72,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
   hudRoom.innerText = roomCode;
 
   let myHand = [];
+  let activeSortType = null; // 'color' or 'value' or null
   let currentPlayers = [];
   let currentActivePlayerIndex = 0;
   let isMyTurn = false;
@@ -150,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
   socket.on('player_state', (state) => {
     lastReceivedState = state;
     myHand = state.hand || [];
+    applyClientHandSorting();
     currentPlayers = state.players || [];
     isMyTurn = state.isMyTurn;
     activeColor = state.currentColor;
@@ -378,11 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     return `
       <div class="uno-card mini-card ${c.color}" style="width: 45px; height: 70px; padding: 4px; border-radius: 4px; font-size: 8px; border: 1.5px solid #fff; flex-shrink: 0; position: relative; ${inlineBg}">
-        <span class="card-corner top" style="font-size: 8px;">${displaySym}</span>
-        <div class="card-center" style="font-size: 14px;">
-          <span class="card-center-val" style="font-size: 18px; text-shadow: none;">${displaySym}</span>
-        </div>
-        <span class="card-corner bottom" style="font-size: 8px;">${displaySym}</span>
+        ${renderCardContent(displaySym, '', 'style="font-size: 8px;"')}
       </div>
     `;
   }
@@ -539,11 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       cardEl.innerHTML = `
-        <span class="card-corner top">${displaySym || ''}</span>
-        <div class="card-center">
-          <span class="card-center-val ${extraClass}">${displaySym}</span>
-        </div>
-        <span class="card-corner bottom">${displaySym || ''}</span>
+        ${renderCardContent(displaySym, extraClass)}
         ${c.type === 'custom' ? `<div class="card-details-tooltip"><b>${c.name}</b><br>${c.description || 'Custom Card'}</div>` : ''}
       `;
 
@@ -646,11 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     cardEl.innerHTML = `
-      <span class="card-corner top">${displaySym || ''}</span>
-      <div class="card-center">
-        <span class="card-center-val ${extraClass}">${displaySym}</span>
-      </div>
-      <span class="card-corner bottom">${displaySym || ''}</span>
+      ${renderCardContent(displaySym, extraClass)}
       ${card.type === 'custom' ? `<div class="card-details-tooltip"><b>${card.name}</b><br>${card.description || 'Custom Card'}</div>` : ''}
     `;
 
@@ -715,6 +739,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // Call out click
   btnCallOut.addEventListener('click', () => {
     socket.emit('call_out_uno', { roomCode });
+  });
+
+  btnSortColor.addEventListener('click', () => {
+    if (activeSortType === 'color') {
+      activeSortType = null;
+      btnSortColor.style.borderColor = 'rgba(255,255,255,0.1)';
+      btnSortColor.style.background = 'rgba(255,255,255,0.03)';
+    } else {
+      activeSortType = 'color';
+      btnSortColor.style.borderColor = '#ffffff';
+      btnSortColor.style.background = 'rgba(255,255,255,0.15)';
+      
+      btnSortValue.style.borderColor = 'rgba(255,255,255,0.1)';
+      btnSortValue.style.background = 'rgba(255,255,255,0.03)';
+    }
+    applyClientHandSorting();
+    renderHand();
+  });
+
+  btnSortValue.addEventListener('click', () => {
+    if (activeSortType === 'value') {
+      activeSortType = null;
+      btnSortValue.style.borderColor = 'rgba(255,255,255,0.1)';
+      btnSortValue.style.background = 'rgba(255,255,255,0.03)';
+    } else {
+      activeSortType = 'value';
+      btnSortValue.style.borderColor = '#ffffff';
+      btnSortValue.style.background = 'rgba(255,255,255,0.15)';
+      
+      btnSortColor.style.borderColor = 'rgba(255,255,255,0.1)';
+      btnSortColor.style.background = 'rgba(255,255,255,0.03)';
+    }
+    applyClientHandSorting();
+    renderHand();
   });
 
   // Play Selected Cards click handler
@@ -1122,11 +1180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     cardEl.innerHTML = `
-      <span class="card-corner top">${displaySym || ''}</span>
-      <div class="card-center">
-        <span class="card-center-val ${extraClass}">${displaySym}</span>
-      </div>
-      <span class="card-corner bottom">${displaySym || ''}</span>
+      ${renderCardContent(displaySym, extraClass)}
       ${topCard.type === 'custom' ? `<div class="card-details-tooltip"><b>${topCard.name}</b><br>${topCard.description || 'Custom Card'}</div>` : ''}
     `;
 
@@ -1213,6 +1267,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
       table.appendChild(playerDiv);
     });
+  }
+
+  function applyClientHandSorting() {
+    if (activeSortType === 'color') {
+      myHand.sort((a, b) => {
+        const colorOrder = { 'red': 0, 'blue': 1, 'green': 2, 'yellow': 3, 'wild': 4 };
+        const colorA = a.color || 'wild';
+        const colorB = b.color || 'wild';
+        if (colorOrder[colorA] !== colorOrder[colorB]) {
+          return colorOrder[colorA] - colorOrder[colorB];
+        }
+        return String(a.value).localeCompare(String(b.value));
+      });
+    } else if (activeSortType === 'value') {
+      myHand.sort((a, b) => {
+        const valA = String(a.value);
+        const valB = String(b.value);
+        if (valA !== valB) {
+          return valA.localeCompare(valB);
+        }
+        const colorOrder = { 'red': 0, 'blue': 1, 'green': 2, 'yellow': 3, 'wild': 4 };
+        return colorOrder[a.color || 'wild'] - colorOrder[b.color || 'wild'];
+      });
+    }
   }
 
   // Handle dynamic screen resizing to reposition player avatars instantly
