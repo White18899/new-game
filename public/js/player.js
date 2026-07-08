@@ -60,6 +60,29 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  function getAvatarAnimClass(emoji) {
+    const mapping = {
+      '🥷': 'av-anim-ninja',
+      '🧙': 'av-anim-wizard',
+      '👾': 'av-anim-glitch',
+      '🧙‍♀️': 'av-anim-witch',
+      '👩‍🚀': 'av-anim-astro',
+      '🧚‍♀️': 'av-anim-fairy',
+      '🦸‍♀️': 'av-anim-hero',
+      '🧜‍♀️': 'av-anim-mermaid',
+      '🦊': 'av-anim-fox',
+      '🐲': 'av-anim-dragon',
+      '🦖': 'av-anim-dino',
+      '🦄': 'av-anim-unicorn',
+      '🧛‍♀️': 'av-anim-vampire',
+      '🦁': 'av-anim-lion',
+      '💀': 'av-anim-skull',
+      '🐈‍⬛': 'av-anim-cat',
+      '👑': 'av-anim-crown'
+    };
+    return mapping[emoji] || '';
+  }
+
   // Elements
   const hudAvatar = document.getElementById('hudAvatar');
   const hudName = document.getElementById('hudName');
@@ -86,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const recentPlaysFeed = document.getElementById('recentPlaysFeed');
 
   // Populate HUD details
-  hudAvatar.innerText = playerAvatar;
+  hudAvatar.innerHTML = `<span class="avatar-emoji ${getAvatarAnimClass(playerAvatar)}">${playerAvatar}</span>`;
   let displayName = playerName;
   if (playerName && playerName.endsWith(' (Host)')) {
     const baseName = playerName.substring(0, playerName.length - 7);
@@ -360,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           div.innerHTML = `
             <div class="opponent-name-wrapper" style="display: flex; align-items: center; gap: 4px;">
-              <span>${p.avatar}</span>
+              <span><span class="avatar-emoji ${getAvatarAnimClass(p.avatar)}">${p.avatar}</span></span>
               <span style="${p.isTurn ? 'font-weight: 700; color: #fff;' : 'color: #ccc;'}; display: inline-flex; align-items: center; gap: 2px;">${nameHtml}</span>
             </div>
             ${rightContent}
@@ -470,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; font-weight: 700; font-family: var(--font-display); background: rgba(255,255,255,0.03); border: 1px solid var(--border-light); padding: 4px 10px; border-radius: 4px; margin-bottom: 4px;">
             <button class="btn btn-secondary btn-sm" id="btnSpectatorPrev" style="padding: 1px 8px; min-width: 24px; height: 22px; font-size: 0.72rem; border-color: var(--border-light); margin: 0; display: inline-flex; align-items: center; justify-content: center; ${btnStyle}" ${isBtnDisabled ? 'disabled' : ''}>&larr;</button>
             <span style="color: #fff; display: inline-flex; align-items: center; gap: 4px;">
-              ${p.avatar} ${nameHtml} <span style="font-size: 0.72rem; font-weight: normal; color: var(--text-secondary);">(${p.cardCount} cards)</span>
+              <span class="avatar-emoji ${getAvatarAnimClass(p.avatar)}">${p.avatar}</span> ${nameHtml} <span style="font-size: 0.72rem; font-weight: normal; color: var(--text-secondary);">(${p.cardCount} cards)</span>
             </span>
             <button class="btn btn-secondary btn-sm" id="btnSpectatorNext" style="padding: 1px 8px; min-width: 24px; height: 22px; font-size: 0.72rem; border-color: var(--border-light); margin: 0; display: inline-flex; align-items: center; justify-content: center; ${btnStyle}" ${isBtnDisabled ? 'disabled' : ''}>&rarr;</button>
           </div>
@@ -1258,7 +1281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${wonOverlay}
         ${bubbleHtml}
         <div class="avatar-circle" style="${p.hasWon ? 'opacity: 0.6; border-color: var(--clr-yellow) !important;' : ''}">
-          ${p.avatar}
+          <span class="avatar-emoji ${getAvatarAnimClass(p.avatar)}">${p.avatar}</span>
           ${cardBadgeHtml}
         </div>
         <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}; display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; white-space: nowrap;">${nameText}</div>

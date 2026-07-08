@@ -591,5 +591,210 @@ span, button {
   100% { transform: translate(80px, 40px) scale(1.15); }
 }
 
+/* Animated Avatars Styles */
+.avatar-emoji {
+  display: inline-block;
+  transform-origin: center bottom;
+  transition: transform 0.25s ease;
+}
+
+/* Animated Avatar Keyframes (Gaming Theme) */
+@keyframes ninjaStealth {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0px); }
+  50% { transform: translateY(2px) scale(0.9); opacity: 0.3; filter: blur(1.5px); }
+}
+
+@keyframes astroFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(4deg); }
+}
+
+@keyframes wizardMagic {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(168, 85, 247, 0.4)); }
+  50% { transform: scale(1.15) rotate(-3deg); filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8)); }
+}
+
+@keyframes vampireFlutter {
+  0%, 100% { transform: scale(1) translateY(0); }
+  30% { transform: scale(1.08, 0.95) translateY(-3px); }
+  70% { transform: scale(0.95, 1.05) translateY(1px); }
+}
+
+@keyframes zombieStagger {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg) translateX(-1px); }
+  75% { transform: rotate(5deg) translateX(1px); }
+}
+
+@keyframes heroHover {
+  0%, 100% { transform: translateY(0) scaleX(1); }
+  50% { transform: translateY(-4px) scaleX(1.05); }
+}
+
+@keyframes elfSparkle {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 1px rgba(34, 197, 94, 0.3)); }
+  50% { transform: scale(1.12) rotate(4deg); filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.7)); }
+}
+
+@keyframes glitchJitter {
+  0%, 100% { transform: translate(0) skewX(0deg); filter: hue-rotate(0deg); }
+  20% { transform: translate(-2px, 1px) skewX(-4deg); filter: hue-rotate(30deg); }
+  40% { transform: translate(1.5px, -1px) skewX(4deg); filter: hue-rotate(60deg); }
+  60% { transform: translate(-1px, -1.5px); filter: hue-rotate(90deg); }
+  80% { transform: translate(2px, 1.5px); filter: hue-rotate(120deg); }
+}
+
+@keyframes oniRoar {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.4)); }
+  50% { transform: scale(1.22) rotate(-5deg); filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8)); }
+}
+
+@keyframes skullFloat {
+  0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.2)); }
+  50% { transform: translateY(-5px); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+}
+
+@keyframes dragonFire {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.15) rotate(6deg); filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.7)); }
+}
+
+@keyframes catSway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(8deg) translateY(-1px); }
+}
+
+@keyframes crownGlow {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.4)); }
+  50% { transform: scale(1.12) translateY(-2px); filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8)); }
+}
+
+@keyframes witchMagic {
+  0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 2px rgba(236, 72, 153, 0.4)); }
+  50% { transform: translateY(-4px) scale(1.1) rotate(4deg); filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.8)); }
+}
+
+@keyframes mermaidSway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-8deg) translateY(-2px); filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.6)); }
+}
+
+@keyframes fairyFloat {
+  0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 1px rgba(253, 224, 71, 0.4)); }
+  50% { transform: translateY(-5px) scale(1.1) rotate(-4deg); filter: drop-shadow(0 0 8px rgba(253, 224, 71, 0.8)); }
+}
+
+@keyframes dinoWiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-8deg) scale(1.05); }
+  75% { transform: rotate(8deg) scale(1.05); }
+}
+
+@keyframes foxSneak {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  30% { transform: translateY(3px) rotate(-4deg); }
+  60% { transform: translateY(-2px) rotate(4deg); }
+}
+
+@keyframes lionPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15) translateY(-2px); }
+}
+
+@keyframes unicornSparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  35% { transform: scale(1.18) rotate(10deg); filter: drop-shadow(0 0 5px rgba(255, 105, 180, 0.6)); }
+  70% { transform: scale(1.12) rotate(-8deg); filter: drop-shadow(0 0 8px rgba(135, 206, 250, 0.6)); }
+}
+
+/* Continuous Avatar Animation Loops (everywhere by default) */
+.av-anim-ninja {
+  animation: ninjaStealth 1.6s infinite ease-in-out;
+}
+
+.av-anim-astro {
+  animation: astroFloat 2.5s infinite ease-in-out;
+}
+
+.av-anim-wizard {
+  animation: wizardMagic 2.0s infinite ease-in-out;
+}
+
+.av-anim-vampire {
+  animation: vampireFlutter 1.8s infinite ease-in-out;
+}
+
+.av-anim-zombie {
+  animation: zombieStagger 2.2s infinite ease-in-out;
+}
+
+.av-anim-hero {
+  animation: heroHover 1.8s infinite ease-in-out;
+}
+
+.av-anim-elf {
+  animation: elfSparkle 2.0s infinite ease-in-out;
+}
+
+.av-anim-glitch {
+  animation: glitchJitter 1.2s infinite linear;
+}
+
+.av-anim-oni {
+  animation: oniRoar 1.8s infinite ease-in-out;
+}
+
+.av-anim-skull {
+  animation: skullFloat 2.2s infinite ease-in-out;
+}
+
+.av-anim-dragon {
+  animation: dragonFire 2.2s infinite ease-in-out;
+}
+
+.av-anim-cat {
+  animation: catSway 1.8s infinite ease-in-out;
+}
+
+.av-anim-crown {
+  animation: crownGlow 2.2s infinite ease-in-out;
+}
+
+.av-anim-witch {
+  animation: witchMagic 2.0s infinite ease-in-out;
+}
+
+.av-anim-mermaid {
+  animation: mermaidSway 2.2s infinite ease-in-out;
+}
+
+.av-anim-fairy {
+  animation: fairyFloat 2.0s infinite ease-in-out;
+}
+
+.av-anim-fox {
+  animation: foxSneak 2.5s infinite ease-in-out;
+}
+
+.av-anim-dino {
+  animation: dinoWiggle 1.8s infinite ease-in-out;
+}
+
+.av-anim-lion {
+  animation: lionPulse 2.2s infinite ease-in-out;
+}
+
+.av-anim-unicorn {
+  animation: unicornSparkle 2.5s infinite ease-in-out;
+}
+
+/* Hover Zoom effect on parent hover states */
+.avatar-item:hover .avatar-emoji,
+.avatar-circle:hover .avatar-emoji,
+.player-hud:hover .avatar-emoji,
+.opponent-name-wrapper:hover .avatar-emoji {
+  transform: scale(1.15);
+}
+
 
 

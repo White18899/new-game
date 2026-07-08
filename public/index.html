@@ -204,7 +204,7 @@
     const prevRoom = sessionStorage.getItem('uno_roomCode');
     const prevAvatar = sessionStorage.getItem('uno_playerAvatar');
 
-    const avatars = ['🦖', '🦊', '🐯', '🦁', '🐼', '🐨', '🦄', '🐙', '👽', '🤖', '👻', '🦥'];
+    const avatars = ['🥷', '👩‍🚀', '🧙', '👾', '🧙‍♀️', '🧚‍♀️', '🦸‍♀️', '🧜‍♀️', '🦊', '🐲', '🦖', '🦄', '🧛‍♀️', '🦁', '💀', '🐈‍⬛'];
     let selectedAvatar = prevAvatar || avatars[0];
 
     const choiceGroup = document.getElementById('choiceGroup');
@@ -212,12 +212,40 @@
     const avatarGrid = document.getElementById('avatarGrid');
     const errorMsg = document.getElementById('errorMsg');
 
+    const getAvatarAnimClass = (emoji) => {
+      const mapping = {
+        '🥷': 'av-anim-ninja',
+        '🧙': 'av-anim-wizard',
+        '👾': 'av-anim-glitch',
+        '🧙‍♀️': 'av-anim-witch',
+        '👩‍🚀': 'av-anim-astro',
+        '🧚‍♀️': 'av-anim-fairy',
+        '🦸‍♀️': 'av-anim-hero',
+        '🧜‍♀️': 'av-anim-mermaid',
+        '🦊': 'av-anim-fox',
+        '🐲': 'av-anim-dragon',
+        '🦖': 'av-anim-dino',
+        '🦄': 'av-anim-unicorn',
+        '🧛‍♀️': 'av-anim-vampire',
+        '🦁': 'av-anim-lion',
+        '💀': 'av-anim-skull',
+        '🐈‍⬛': 'av-anim-cat',
+        '👑': 'av-anim-crown'
+      };
+      return mapping[emoji] || '';
+    };
+
     // Populate Avatars
     avatars.forEach((av, i) => {
       const div = document.createElement('div');
       const isSelected = prevAvatar ? (av === prevAvatar) : (i === 0);
       div.className = `avatar-item ${isSelected ? 'selected' : ''}`;
-      div.innerText = av;
+      
+      const span = document.createElement('span');
+      span.className = `avatar-emoji ${getAvatarAnimClass(av)}`;
+      span.innerText = av;
+      div.appendChild(span);
+
       div.addEventListener('click', () => {
         document.querySelectorAll('.avatar-item').forEach(item => item.classList.remove('selected'));
         div.classList.add('selected');

@@ -131,6 +131,29 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
+  function getAvatarAnimClass(emoji) {
+    const mapping = {
+      '🥷': 'av-anim-ninja',
+      '🧙': 'av-anim-wizard',
+      '👾': 'av-anim-glitch',
+      '🧙‍♀️': 'av-anim-witch',
+      '👩‍🚀': 'av-anim-astro',
+      '🧚‍♀️': 'av-anim-fairy',
+      '🦸‍♀️': 'av-anim-hero',
+      '🧜‍♀️': 'av-anim-mermaid',
+      '🦊': 'av-anim-fox',
+      '🐲': 'av-anim-dragon',
+      '🦖': 'av-anim-dino',
+      '🦄': 'av-anim-unicorn',
+      '🧛‍♀️': 'av-anim-vampire',
+      '🦁': 'av-anim-lion',
+      '💀': 'av-anim-skull',
+      '🐈‍⬛': 'av-anim-cat',
+      '👑': 'av-anim-crown'
+    };
+    return mapping[emoji] || '';
+  }
+
   let localCustomCardsCount = 0;
   let currentTopCard = null;
   let lastTopCardId = null;
@@ -428,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       card.innerHTML = `
-        <div class="avatar">${p.avatar}</div>
+        <div class="avatar"><span class="avatar-emoji ${getAvatarAnimClass(p.avatar)}">${p.avatar}</span></div>
         <div class="name" style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%;">${nameHtml}</div>
       `;
       lobbyPlayersGrid.appendChild(card);
@@ -569,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ${wonOverlay}
         ${bubbleHtml}
         <div class="avatar-circle" style="${p.hasWon ? 'opacity: 0.6; border-color: var(--clr-yellow) !important;' : ''}">
-          ${p.avatar}
+          <span class="avatar-emoji ${getAvatarAnimClass(p.avatar)}">${p.avatar}</span>
           ${cardBadgeHtml}
         </div>
         <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}; display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; white-space: nowrap;">${nameHtml}</div>
