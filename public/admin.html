@@ -7,18 +7,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #07070a;
-      --bg-card: rgba(13, 13, 18, 0.65);
-      --bg-card-hover: rgba(22, 22, 33, 0.8);
-      --border-color: rgba(255, 255, 255, 0.08);
-      --border-color-active: rgba(255, 255, 255, 0.2);
+      --bg-dark: #fafafa;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f3f4f6;
+      --border-color: #e5e7eb;
+      --border-color-active: #9ca3af;
       
-      --text-primary: #f3f4f6;
-      --text-secondary: #9ca3af;
-      --text-muted: #6b7280;
+      --text-primary: #111827;
+      --text-secondary: #4b5563;
+      --text-muted: #9ca3af;
       
-      --accent-color: #6366f1;
-      --accent-hover: #4f46e5;
+      --accent-color: #000000;
+      --accent-hover: #1f2937;
       
       --clr-red: #ef4444;
       --clr-red-hover: #dc2626;
@@ -38,10 +38,6 @@
     body {
       font-family: var(--font-sans);
       background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.05) 0px, transparent 50%);
-      background-attachment: fixed;
       color: var(--text-primary);
       min-height: 100vh;
       display: flex;
@@ -59,7 +55,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(7, 7, 10, 0.8);
+      background: #ffffff;
     }
 
     .brand {
@@ -71,16 +67,14 @@
     .brand-logo {
       font-size: 1.5rem;
       font-weight: 800;
-      background: linear-gradient(135deg, var(--accent-color) 0%, #a78bfa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #000000;
       font-family: var(--font-display);
     }
 
     .badge-admin {
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid rgba(99, 102, 241, 0.3);
-      color: #818cf8;
+      background: #000000;
+      border: 1px solid #000000;
+      color: #ffffff;
       font-size: 0.75rem;
       padding: 2px 8px;
       border-radius: 99px;
@@ -136,13 +130,13 @@
       border: 1px solid var(--border-color);
       border-radius: 12px;
       padding: 24px;
-      backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
       gap: 8px;
       position: relative;
       overflow: hidden;
       transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .stat-card::after {
@@ -153,12 +147,12 @@
       right: 0;
       height: 3px;
       background: var(--accent-color);
-      opacity: 0.3;
+      opacity: 0.8;
     }
 
-    .stat-card.active-connections::after { background: var(--accent-color); }
-    .stat-card.historical-records::after { background: var(--clr-green); }
-    .stat-card.banned-count::after { background: var(--clr-red); }
+    .stat-card.active-connections::after { background: #111827; }
+    .stat-card.historical-records::after { background: #6b7280; }
+    .stat-card.banned-count::after { background: #d1d5db; }
 
     .stat-title {
       font-size: 0.85rem;
@@ -185,10 +179,10 @@
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      backdrop-filter: blur(8px);
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
     .panel-header {
@@ -217,7 +211,7 @@
     }
 
     .search-input {
-      background: rgba(0, 0, 0, 0.3);
+      background: #ffffff;
       border: 1px solid var(--border-color);
       color: var(--text-primary);
       padding: 8px 14px;
@@ -230,7 +224,7 @@
 
     .search-input:focus {
       border-color: var(--accent-color);
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
     }
 
     /* Tables */
@@ -246,7 +240,7 @@
     }
 
     th {
-      background: rgba(255, 255, 255, 0.02);
+      background: #f9fafb;
       padding: 14px 24px;
       font-weight: 600;
       color: var(--text-secondary);
@@ -268,7 +262,7 @@
     }
 
     tr:hover td {
-      background: rgba(255, 255, 255, 0.01);
+      background: #f9fafb;
     }
 
     /* Badges & Indicators */
@@ -284,29 +278,30 @@
 
     .badge-role-host {
       background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.25);
-      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #b45309;
     }
 
     .badge-role-player {
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.25);
-      color: #a5b4fc;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: #000000;
     }
 
     .badge-role-none {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
       color: var(--text-secondary);
     }
 
     .mono {
       font-family: monospace;
       font-size: 0.85rem;
-      background: rgba(255, 255, 255, 0.05);
+      background: #f3f4f6;
       padding: 2px 6px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid #e5e7eb;
+      color: #374151;
     }
 
     /* User Agent styling */
@@ -327,9 +322,9 @@
 
     /* Buttons */
     .btn-action-ban {
-      background: rgba(239, 110, 110, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.25);
-      color: #fca5a5;
+      background: #ffffff;
+      border: 1px solid #ef4444;
+      color: #ef4444;
       padding: 6px 12px;
       border-radius: 6px;
       cursor: pointer;
@@ -339,16 +334,15 @@
     }
 
     .btn-action-ban:hover {
-      background: var(--clr-red);
+      background: #ef4444;
       color: #ffffff;
-      border-color: var(--clr-red);
-      box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+      border-color: #ef4444;
     }
 
     .btn-action-unban {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      color: #6ee7b7;
+      background: #ffffff;
+      border: 1px solid #10b981;
+      color: #10b981;
       padding: 6px 12px;
       border-radius: 6px;
       cursor: pointer;
@@ -358,10 +352,9 @@
     }
 
     .btn-action-unban:hover {
-      background: var(--clr-green);
+      background: #10b981;
       color: #ffffff;
-      border-color: var(--clr-green);
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+      border-color: #10b981;
     }
 
     /* Alert Banner */
@@ -386,7 +379,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(7, 7, 10, 0.95);
+      background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(12px);
       z-index: 1000;
       display: flex;
@@ -396,13 +389,13 @@
     }
 
     .modal-card {
-      background: rgba(18, 18, 24, 0.8);
+      background: #ffffff;
       border: 1px solid var(--border-color);
       border-radius: 16px;
       width: 420px;
       max-width: 90%;
       padding: 32px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
       display: flex;
       flex-direction: column;
       gap: 20px;
@@ -422,11 +415,11 @@
     }
 
     .token-input-field {
-      background: rgba(0, 0, 0, 0.5);
+      background: #ffffff;
       border: 1px solid var(--border-color);
       border-radius: 8px;
       padding: 12px 16px;
-      color: #ffffff;
+      color: #000000;
       font-size: 1rem;
       text-align: center;
       letter-spacing: 0.1em;
@@ -436,7 +429,7 @@
 
     .token-input-field:focus {
       border-color: var(--accent-color);
-      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
     }
 
     .btn-primary {
@@ -453,7 +446,6 @@
 
     .btn-primary:hover {
       background: var(--accent-hover);
-      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
     }
 
     /* Ban Form Panel */
@@ -481,9 +473,9 @@
     }
 
     .form-group input {
-      background: rgba(0, 0, 0, 0.3);
+      background: #ffffff;
       border: 1px solid var(--border-color);
-      color: #ffffff;
+      color: #000000;
       padding: 10px 14px;
       border-radius: 6px;
       font-size: 0.9rem;
@@ -674,6 +666,8 @@
       bans: { bannedIps: [], bannedMacs: [] }
     };
 
+    let refreshInterval = null;
+
     // Load initial token from URL or localStorage
     function init() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -686,6 +680,10 @@
       }
 
       fetchData();
+
+      // Automatically refresh data every 3 seconds to keep stats and connections dynamically up to date
+      if (refreshInterval) clearInterval(refreshInterval);
+      refreshInterval = setInterval(fetchData, 3000);
     }
 
     function getStoredToken() {
@@ -781,9 +779,12 @@
       tbody.innerHTML = '';
 
       const filtered = dataState.records.filter(r => {
-        return r.username.toLowerCase().includes(searchQuery) ||
-               r.ip.toLowerCase().includes(searchQuery) ||
-               r.mac.toLowerCase().includes(searchQuery);
+        const username = (r.username || '').toLowerCase();
+        const ip = (r.ip || '').toLowerCase();
+        const mac = (r.mac || '').toLowerCase();
+        return username.includes(searchQuery) ||
+               ip.includes(searchQuery) ||
+               mac.includes(searchQuery);
       });
 
       if (filtered.length === 0) {

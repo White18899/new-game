@@ -88,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastMyHandCount = 0;
   let lastReceivedState = null;
   let activePlayerMessages = new Map();
+  let spectatorActivePlayerIndex = 0;
 
   // Sound Controller
   const btnMuteSound = document.getElementById('btnMuteSound');
@@ -112,12 +113,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Exit Game Controller
   const btnExitRoom = document.getElementById('btnExitRoom');
-  if (btnExitRoom) {
+  const exitConfirmOverlay = document.getElementById('exitConfirmOverlay');
+  const btnCancelExit = document.getElementById('btnCancelExit');
+  const btnConfirmExit = document.getElementById('btnConfirmExit');
+
+  if (btnExitRoom && exitConfirmOverlay) {
     btnExitRoom.addEventListener('click', () => {
-      if (confirm('Are you sure you want to leave the game and return to the main lobby?')) {
-        sessionStorage.clear();
-        window.location.href = '/index.html';
-      }
+      exitConfirmOverlay.classList.add('active');
+    });
+  }
+
+  if (btnCancelExit && exitConfirmOverlay) {
+    btnCancelExit.addEventListener('click', () => {
+      exitConfirmOverlay.classList.remove('active');
+    });
+  }
+
+  if (btnConfirmExit) {
+    btnConfirmExit.addEventListener('click', () => {
+      window.location.href = '/index.html';
     });
   }
 
@@ -346,11 +360,135 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let lastHandIds = [];
 
+  function renderMiniCard(c) {
+    const sym = c.value;
+    let displaySym = sym;
+    if (c.type === 'action') {
+      if (sym === 'skip') displaySym = '⊘';
+      else if (sym === 'reverse') displaySym = '⇆';
+      else if (sym === 'draw2') displaySym = '+2';
+    } else if (c.type === 'wild') {
+      displaySym = (sym === 'wild4') ? '+4' : ((sym === 'swap') ? '🔀' : 'W');
+    }
+    
+    let inlineBg = '';
+    if (c.type === 'custom' && c.color !== 'red' && c.color !== 'blue' && c.color !== 'green' && c.color !== 'yellow' && c.color !== 'wild') {
+      inlineBg = `background-color: ${c.color};`;
+    }
+    
+    return `
+      <div class="uno-card mini-card ${c.color}" style="width: 45px; height: 70px; padding: 4px; border-radius: 4px; font-size: 8px; border: 1.5px solid #fff; flex-shrink: 0; position: relative; ${inlineBg}">
+        <span class="card-corner top" style="font-size: 8px;">${displaySym}</span>
+        <div class="card-center" style="font-size: 14px;">
+          <span class="card-center-val" style="font-size: 18px; text-shadow: none;">${displaySym}</span>
+        </div>
+        <span class="card-corner bottom" style="font-size: 8px;">${displaySym}</span>
+      </div>
+    `;
+  }
+
   // Render player cards
   function renderHand() {
     playerHand.innerHTML = '';
     selectedCards = selectedCards.filter(id => myHand.some(c => c.id === id));
     updatePlayButtonHUD();
+
+    // Check if I have finished (spectator mode)
+    const meObj = currentPlayers.find(p => p.name === playerName);
+    if (meObj && meObj.hasWon) {
+      const activeOpponents = currentPlayers.filter(p => p.name !== playerName && !p.hasWon);
+      
+      let spectatorHtml = `
+        <div class="spectator-view" style="width: 100%; display: flex; flex-direction: column; gap: 6px; padding: 4px 10px;">
+          <div style="font-family: var(--font-display); font-size: 0.78rem; color: var(--clr-yellow); text-transform: uppercase; text-align: center; letter-spacing: 1px; font-weight: 700; border-bottom: 1px solid var(--border-light); padding-bottom: 4px; margin-bottom: 4px;">
+            👁️ Spectator Mode - Viewing Active Hands
+          </div>
+      `;
+
+      if (activeOpponents.length > 0) {
+        if (spectatorActivePlayerIndex >= activeOpponents.length) {
+          spectatorActivePlayerIndex = 0;
+        } else if (spectatorActivePlayerIndex < 0) {
+          spectatorActivePlayerIndex = activeOpponents.length - 1;
+        }
+        
+        const p = activeOpponents[spectatorActivePlayerIndex];
+        const pCards = p.cards || [];
+        
+        let cardsHtml = '';
+        if (pCards.length > 0) {
+          pCards.forEach(c => {
+            cardsHtml += renderMiniCard(c);
+          });
+        } else {
+          cardsHtml = `<div style="font-size: 0.75rem; color: var(--text-secondary); font-style: italic; padding: 12px 0;">Waiting for cards...</div>`;
+        }
+
+        let nameHtml = p.name;
+        if (p.name.endsWith(' (Host)')) {
+          const baseName = p.name.substring(0, p.name.length - 7);
+          nameHtml = `${baseName} <span class="host-badge-tag" style="background: var(--clr-red); color: white; border-radius: 3px; padding: 1px 3.5px; font-size: 0.58rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.15);">HOST</span>`;
+        }
+
+        // Add nav buttons
+        const isBtnDisabled = activeOpponents.length <= 1;
+        const btnStyle = isBtnDisabled ? 'opacity: 0.3; cursor: not-allowed;' : '';
+
+        spectatorHtml += `
+          <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; font-weight: 700; font-family: var(--font-display); background: rgba(255,255,255,0.03); border: 1px solid var(--border-light); padding: 4px 10px; border-radius: 4px; margin-bottom: 4px;">
+            <button class="btn btn-secondary btn-sm" id="btnSpectatorPrev" style="padding: 1px 8px; min-width: 24px; height: 22px; font-size: 0.72rem; border-color: var(--border-light); margin: 0; display: inline-flex; align-items: center; justify-content: center; ${btnStyle}" ${isBtnDisabled ? 'disabled' : ''}>&larr;</button>
+            <span style="color: #fff; display: inline-flex; align-items: center; gap: 4px;">
+              ${p.avatar} ${nameHtml} <span style="font-size: 0.72rem; font-weight: normal; color: var(--text-secondary);">(${p.cardCount} cards)</span>
+            </span>
+            <button class="btn btn-secondary btn-sm" id="btnSpectatorNext" style="padding: 1px 8px; min-width: 24px; height: 22px; font-size: 0.72rem; border-color: var(--border-light); margin: 0; display: inline-flex; align-items: center; justify-content: center; ${btnStyle}" ${isBtnDisabled ? 'disabled' : ''}>&rarr;</button>
+          </div>
+          <div class="mini-hand" style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0; min-height: 75px; justify-content: center; width: 100%;">
+            ${cardsHtml}
+          </div>
+        `;
+      } else {
+        spectatorHtml += `<div style="font-size: 0.75rem; color: var(--text-secondary); font-style: italic; text-align: center; padding: 20px 0;">No active players remaining.</div>`;
+      }
+
+      spectatorHtml += `
+        </div>
+      `;
+
+      playerHand.innerHTML = spectatorHtml;
+      playerHand.style.flexDirection = 'column';
+      playerHand.style.alignItems = 'stretch';
+      playerHand.style.overflowY = 'hidden';
+
+      // Bind nav actions
+      const btnPrev = document.getElementById('btnSpectatorPrev');
+      const btnNext = document.getElementById('btnSpectatorNext');
+      if (btnPrev) {
+        btnPrev.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const opps = currentPlayers.filter(p => p.name !== playerName && !p.hasWon);
+          if (opps.length > 0) {
+            spectatorActivePlayerIndex = (spectatorActivePlayerIndex - 1 + opps.length) % opps.length;
+            renderHand();
+          }
+        });
+      }
+      if (btnNext) {
+        btnNext.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const opps = currentPlayers.filter(p => p.name !== playerName && !p.hasWon);
+          if (opps.length > 0) {
+            spectatorActivePlayerIndex = (spectatorActivePlayerIndex + 1) % opps.length;
+            renderHand();
+          }
+        });
+      }
+      return;
+    }
+
+    // Default hand rendering for active players
+    playerHand.style.flexDirection = 'row';
+    playerHand.style.alignItems = 'center';
+    playerHand.style.overflowY = 'hidden';
 
     if (myHand.length === 0) {
       playerHand.innerHTML = '<div style="color: var(--text-secondary); font-style: italic; width: 100%; text-align: center; padding: 20px;">No cards in hand.</div>';

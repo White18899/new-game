@@ -179,11 +179,13 @@
   <!-- Socket.io -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Clear any previous session info immediately on entering lobby
-    sessionStorage.clear();
+    // Retrieve previous session details if returning from a room
+    const prevName = sessionStorage.getItem('uno_playerName');
+    const prevRoom = sessionStorage.getItem('uno_roomCode');
+    const prevAvatar = sessionStorage.getItem('uno_playerAvatar');
 
     const avatars = ['🦖', '🦊', '🐯', '🦁', '🐼', '🐨', '🦄', '🐙', '👽', '🤖', '👻', '🦥'];
-    let selectedAvatar = avatars[0];
+    let selectedAvatar = prevAvatar || avatars[0];
 
     const choiceGroup = document.getElementById('choiceGroup');
     const joinForm = document.getElementById('joinForm');
@@ -193,7 +195,8 @@
     // Populate Avatars
     avatars.forEach((av, i) => {
       const div = document.createElement('div');
-      div.className = `avatar-item ${i === 0 ? 'selected' : ''}`;
+      const isSelected = prevAvatar ? (av === prevAvatar) : (i === 0);
+      div.className = `avatar-item ${isSelected ? 'selected' : ''}`;
       div.innerText = av;
       div.addEventListener('click', () => {
         document.querySelectorAll('.avatar-item').forEach(item => item.classList.remove('selected'));
@@ -202,6 +205,17 @@
       });
       avatarGrid.appendChild(div);
     });
+
+    // Prefill form if returning from an active room
+    if (prevName && prevRoom) {
+      choiceGroup.style.display = 'none';
+      joinForm.style.display = 'flex';
+      errorMsg.style.display = 'none';
+      document.getElementById('playerName').value = prevName;
+      document.getElementById('roomCode').value = prevRoom;
+    } else {
+      sessionStorage.clear();
+    }
 
     // Option Toggles
     document.getElementById('btnHostChoice').addEventListener('click', () => {
@@ -218,6 +232,7 @@
     document.getElementById('btnBack').addEventListener('click', () => {
       choiceGroup.style.display = 'flex';
       joinForm.style.display = 'none';
+      sessionStorage.clear(); // Clear session details so they can connect as a different player
     });
 
     // Form Submit Join

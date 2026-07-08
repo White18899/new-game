@@ -452,22 +452,30 @@ function broadcastState(room) {
 
   // Broadcast individualized state to each player
   room.players.forEach((player, index) => {
+    const canSpectate = player.hasWon || room.status === 'gameover';
+
     io.to(player.socketId).emit('player_state', {
       hand: player.cards,
       name: player.name,
       avatar: player.avatar,
       isMyTurn: room.status === 'playing' && room.currentPlayerIndex === index,
       currentPlayerIndex: room.currentPlayerIndex,
-      players: room.players.map((p, idx) => ({
-        name: p.name,
-        avatar: p.avatar,
-        cardCount: p.cards.length,
-        isTurn: room.status === 'playing' && room.currentPlayerIndex === idx,
-        unoDeclared: p.unoDeclared,
-        online: p.online !== false,
-        hasWon: p.hasWon || false,
-        rank: p.rank || 0
-      })),
+      players: room.players.map((p, idx) => {
+        const pState = {
+          name: p.name,
+          avatar: p.avatar,
+          cardCount: p.cards.length,
+          isTurn: room.status === 'playing' && room.currentPlayerIndex === idx,
+          unoDeclared: p.unoDeclared,
+          online: p.online !== false,
+          hasWon: p.hasWon || false,
+          rank: p.rank || 0
+        };
+        if (canSpectate) {
+          pState.cards = p.cards;
+        }
+        return pState;
+      }),
       topCard: room.discardPile[0] || null,
       currentColor: room.currentColor,
       currentValue: room.currentValue,
@@ -894,7 +902,7 @@ io.on('connection', (socket) => {
   });
 
   // Start Game
-  socket.on('start_game', ({ roomCode }) => {
+  socket.on('start_game', ({ roomCode, startingCardCount }) => {
     const room = rooms.get(roomCode);
     if (!room || room.hostSocketId !== socket.id) return;
     if (room.players.length < 2) {
@@ -902,17 +910,19 @@ io.on('connection', (socket) => {
       return;
     }
 
+    const dealCount = typeof startingCardCount === 'number' && startingCardCount >= 1 ? startingCardCount : 7;
+
     addLog(room, `Starting the game... Shuffling cards...`);
     // 1. Generate and shuffle deck
     room.deck = shuffle(generateDeck(room.customCards));
 
-    // 2. Distribute 7 cards to each player
+    // 2. Distribute cards to each player
     room.players.forEach(p => {
       p.cards = [];
       p.unoDeclared = false;
       p.hasWon = false;
       p.rank = null;
-      drawCardsForPlayer(room, p, 7);
+      drawCardsForPlayer(room, p, dealCount);
     });
 
     // 3. Set up discard pile (first card must not be a Wild / Action if possible)

@@ -18,13 +18,48 @@
     "ip": "127.0.0.1",
     "mac": "localhost-mac",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-    "lastSeen": "2026-07-08T16:45:14.606Z"
+    "lastSeen": "2026-07-08T16:55:46.352Z"
   },
   {
     "username": "Bambi",
     "ip": "127.0.0.1",
     "mac": "localhost-mac",
     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
-    "lastSeen": "2026-07-08T16:42:33.839Z"
+    "lastSeen": "2026-07-08T17:10:51.111Z"
+  },
+  {
+    "username": "Host (Host)",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T17:30:33.675Z"
+  },
+  {
+    "username": "nithin (Host)",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T16:59:58.504Z"
+  },
+  {
+    "username": "Charlie",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T17:08:12.731Z"
+  },
+  {
+    "username": "a",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T17:20:23.039Z"
+  },
+  {
+    "username": "b",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T17:23:39.733Z"
   }
 ]

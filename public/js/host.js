@@ -287,7 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Start Game Button
   btnStartGame.addEventListener('click', () => {
-    socket.emit('start_game', { roomCode });
+    const startCardsInput = document.getElementById('startingCardCount');
+    const startingCardCount = startCardsInput ? parseInt(startCardsInput.value) || 7 : 7;
+    socket.emit('start_game', { roomCode, startingCardCount });
   });
 
   // Receive Game State updates
