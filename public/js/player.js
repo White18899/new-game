@@ -1,4 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Extract URL parameters if present (allows host to join as a player easily)
+  const urlParams = new URLSearchParams(window.location.search);
+  const qRoomCode = urlParams.get('roomCode');
+  const qPlayerName = urlParams.get('playerName');
+  const qPlayerAvatar = urlParams.get('avatar');
+
+  if (qRoomCode && qPlayerName) {
+    sessionStorage.setItem('uno_roomCode', qRoomCode.toUpperCase());
+    sessionStorage.setItem('uno_playerName', qPlayerName);
+    sessionStorage.setItem('uno_playerAvatar', qPlayerAvatar || '👑');
+    sessionStorage.setItem('uno_isHost', 'false'); // Must be false for the player page!
+    // Clean up URL parameters so a page refresh doesn't overwrite other things
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
   const roomCode = sessionStorage.getItem('uno_roomCode');
   const playerName = sessionStorage.getItem('uno_playerName');
   const playerAvatar = sessionStorage.getItem('uno_playerAvatar');
@@ -38,7 +53,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Populate HUD details
   hudAvatar.innerText = playerAvatar;
-  hudName.innerText = playerName;
+  let displayName = playerName;
+  if (playerName && playerName.endsWith(' (Host)')) {
+    const baseName = playerName.substring(0, playerName.length - 7);
+    displayName = baseName;
+
+    // Add a host badge in HUD next to name
+    const badge = document.createElement('span');
+    badge.className = 'host-badge-tag';
+    badge.innerText = 'HOST';
+    badge.style.cssText = 'background: var(--clr-red); color: white; border-radius: 4px; padding: 1px 4.5px; font-size: 0.62rem; font-weight: bold; margin-left: 6px; border: 1px solid rgba(255,255,255,0.2); vertical-align: middle; line-height: 1.2;';
+
+    hudName.innerText = displayName;
+    hudName.after(badge);
+  } else {
+    hudName.innerText = displayName;
+  }
   hudRoom.innerText = roomCode;
 
   let myHand = [];
@@ -273,10 +303,15 @@ document.addEventListener('DOMContentLoaded', () => {
             rightContent = `<span class="opponent-cards-count" style="color: var(--text-secondary);">${p.cardCount}</span>`;
           }
 
+          let nameHtml = p.name;
+          if (p.name.endsWith(' (Host)')) {
+            const baseName = p.name.substring(0, p.name.length - 7);
+            nameHtml = `${baseName} <span class="host-badge-tag" style="background: var(--clr-red); color: white; border-radius: 3px; padding: 1px 3.5px; font-size: 0.58rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.15); margin-left: 2px; display: inline-flex; align-items: center; vertical-align: middle;">HOST</span>`;
+          }
           div.innerHTML = `
-            <div class="opponent-name-wrapper">
+            <div class="opponent-name-wrapper" style="display: flex; align-items: center; gap: 4px;">
               <span>${p.avatar}</span>
-              <span style="${p.isTurn ? 'font-weight: 700; color: #fff;' : 'color: #ccc;'}">${p.name}</span>
+              <span style="${p.isTurn ? 'font-weight: 700; color: #fff;' : 'color: #ccc;'}; display: inline-flex; align-items: center; gap: 2px;">${nameHtml}</span>
             </div>
             ${rightContent}
           `;
@@ -1019,6 +1054,14 @@ document.addEventListener('DOMContentLoaded', () => {
         bubbleHtml = `<div class="speech-bubble active ${activeMsg.isEmoji ? 'is-emoji' : ''}">${activeMsg.message}</div>`;
       }
 
+      let nameHtml = p.name;
+      if (p.name.endsWith(' (Host)')) {
+        const baseName = p.name.substring(0, p.name.length - 7);
+        nameHtml = `${baseName} <span class="host-badge-tag" style="background: var(--clr-red); color: white; border-radius: 3px; padding: 1px 3.5px; font-size: 0.58rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.15);">HOST</span>`;
+      }
+      const isMeSuffix = index === myIndex ? ' (You)' : '';
+      const nameText = isMeSuffix ? `${nameHtml} <span style="font-size: 0.75rem; opacity: 0.7; margin-left: 2px;">(You)</span>` : nameHtml;
+
       playerDiv.innerHTML = `
         ${wonOverlay}
         ${bubbleHtml}
@@ -1026,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${p.avatar}
           ${cardBadgeHtml}
         </div>
-        <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}">${p.name} ${p.name === playerName ? '(You)' : ''}</div>
+        <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}; display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; white-space: nowrap;">${nameText}</div>
         ${unoBadge}
       `;
 

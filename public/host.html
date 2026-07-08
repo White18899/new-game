@@ -14,6 +14,12 @@
     <header class="host-header glass-panel">
       <div class="logo"><span class="text-shimmer">UNO CONNECT</span> <span>TABLE BOARD</span></div>
       <div class="connection-info">
+        <button class="btn btn-success btn-sm" id="btnJoinAsPlayer" style="font-size: 0.75rem; padding: 4px 10px; margin-right: 12px; display: none; align-items: center; gap: 6px;">
+          <svg class="play-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Join as Player
+        </button>
         <button class="btn btn-danger btn-sm" id="btnExitRoom" style="font-size: 0.75rem; padding: 4px 10px; margin-right: 12px; display: inline-flex; align-items: center; gap: 6px;">
           <svg class="exit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -60,8 +66,31 @@
             </div>
           </div>
           
-          <div class="action-row">
-            <button class="btn btn-primary" id="btnStartGame" disabled>Start Uno Game</button>
+          <div id="hostPlayerSection" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+            <label for="hostPlayerName" style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; text-align: left; display: block;">Host Player Customization</label>
+            <div style="display: flex; gap: 10px;">
+              <select id="hostPlayerAvatar" style="padding: 10px; background: #000000; border: 1px solid var(--border-light); border-radius: 4px; color: white; font-size: 0.95rem; outline: none; cursor: pointer; width: 64px; text-align: center;">
+                <option value="👑">👑</option>
+                <option value="🦖">🦖</option>
+                <option value="🦊">🦊</option>
+                <option value="🐯">🐯</option>
+                <option value="🦁">🦁</option>
+                <option value="🐼">🐼</option>
+                <option value="🐨">🐨</option>
+                <option value="🦄">🦄</option>
+                <option value="🐙">🐙</option>
+                <option value="👽">👽</option>
+                <option value="🤖">🤖</option>
+                <option value="👻">👻</option>
+                <option value="🦥">🦥</option>
+              </select>
+              <input type="text" id="hostPlayerName" placeholder="Enter name" value="Host" style="flex: 1.2; padding: 10px; background: #000000; border: 1px solid var(--border-light); border-radius: 4px; color: white; font-size: 0.85rem; outline: none; transition: border-color 0.2s;" />
+              <button class="btn btn-success" id="btnLobbyJoinAsPlayer" style="flex: 1; display: none; margin: 0; padding: 10px 14px;">Join as Player</button>
+            </div>
+          </div>
+          
+          <div class="action-row" style="display: flex; gap: 12px;">
+            <button class="btn btn-primary" id="btnStartGame" disabled style="flex: 1;">Start Uno Game</button>
           </div>
         </div>
 

@@ -124,6 +124,17 @@ span, button {
   box-shadow: 0 0 12px rgba(255, 68, 68, 0.4);
 }
 
+.btn-success {
+  background: transparent;
+  color: var(--clr-green);
+  border: 1px solid var(--clr-green);
+}
+.btn-success:hover {
+  background: var(--clr-green);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(30, 107, 35, 0.4);
+}
+
 /* Stark Card Styling */
 .uno-card {
   position: relative;

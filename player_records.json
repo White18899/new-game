@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "username": "Host",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T16:30:17.683Z"
+  },
+  {
+    "username": "Charlie (Host)",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T16:33:15.125Z"
+  },
+  {
+    "username": "Foxy (Host)",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T16:45:14.606Z"
+  },
+  {
+    "username": "Bambi",
+    "ip": "127.0.0.1",
+    "mac": "localhost-mac",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
+    "lastSeen": "2026-07-08T16:42:33.839Z"
+  }
+]

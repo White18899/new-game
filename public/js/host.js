@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.status === 'ok') {
           console.log(`Successfully reconnected host to room: ${roomCode}`);
           document.getElementById('roomCodeVal').innerText = roomCode;
+          if (btnJoinAsPlayer) btnJoinAsPlayer.style.display = 'inline-flex';
+          if (btnLobbyJoinAsPlayer) btnLobbyJoinAsPlayer.style.display = 'inline-flex';
         } else {
           console.log(`Failed to reconnect host: ${res.message}. Creating a new room.`);
           createNewRoom();
@@ -36,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('uno_roomCode', roomCode);
         document.getElementById('roomCodeVal').innerText = roomCode;
         console.log(`Lobby successfully created on server with room code: ${roomCode}`);
+        if (btnJoinAsPlayer) btnJoinAsPlayer.style.display = 'inline-flex';
+        if (btnLobbyJoinAsPlayer) btnLobbyJoinAsPlayer.style.display = 'inline-flex';
       } else {
         alert('Failed to create room. Returning to lobby.');
         window.location.href = '/index.html';
@@ -49,6 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const lobbyPlayersGrid = document.getElementById('lobbyPlayersGrid');
   const playerCountSpan = document.getElementById('playerCount');
   const btnStartGame = document.getElementById('btnStartGame');
+  const btnJoinAsPlayer = document.getElementById('btnJoinAsPlayer');
+  const btnLobbyJoinAsPlayer = document.getElementById('btnLobbyJoinAsPlayer');
   const connectUrlSpan = document.getElementById('connectUrl');
   const discardStack = document.getElementById('discardStack');
   const gameLogs = document.getElementById('gameLogs');
@@ -103,6 +109,33 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = '/index.html';
       }
     });
+  }
+
+  // Join as Player Controller
+  const handleJoinAsPlayer = () => {
+    if (!roomCode) return;
+    const inputEl = document.getElementById('hostPlayerName');
+    let name = inputEl ? inputEl.value.trim() : 'Host';
+    if (!name) name = 'Host';
+
+    // Append host tag if not already present
+    let displayName = name;
+    if (!displayName.toLowerCase().includes('(host)')) {
+      displayName = `${name} (Host)`;
+    }
+
+    const avatarEl = document.getElementById('hostPlayerAvatar');
+    const avatar = avatarEl ? avatarEl.value : '👑';
+
+    const url = `/player.html?roomCode=${roomCode}&playerName=${encodeURIComponent(displayName)}&avatar=${encodeURIComponent(avatar)}`;
+    window.open(url, '_blank');
+  };
+
+  if (btnJoinAsPlayer) {
+    btnJoinAsPlayer.addEventListener('click', handleJoinAsPlayer);
+  }
+  if (btnLobbyJoinAsPlayer) {
+    btnLobbyJoinAsPlayer.addEventListener('click', handleJoinAsPlayer);
   }
 
   // Copy Room Code Controller
@@ -271,10 +304,12 @@ document.addEventListener('DOMContentLoaded', () => {
       lastTopCardId = null;
       lastTotalCards = 0;
       lastLogLength = 0;
+      if (btnLobbyJoinAsPlayer) btnLobbyJoinAsPlayer.style.display = 'inline-flex';
     } else {
       lobbyPanel.style.display = 'none';
       gamePanel.style.display = 'flex';
       renderGameTable(state);
+      if (btnLobbyJoinAsPlayer) btnLobbyJoinAsPlayer.style.display = 'none';
     }
   });
 
@@ -292,9 +327,16 @@ document.addEventListener('DOMContentLoaded', () => {
     players.forEach(p => {
       const card = document.createElement('div');
       card.className = 'lobby-player-card';
+      
+      let nameHtml = p.name;
+      if (p.name.endsWith(' (Host)')) {
+        const baseName = p.name.substring(0, p.name.length - 7);
+        nameHtml = `${baseName} <span class="host-badge-tag" style="background: var(--clr-red); color: white; border-radius: 4px; padding: 1px 4px; font-size: 0.65rem; font-weight: bold; margin-left: 4px; border: 1px solid rgba(255,255,255,0.2); display: inline-block;">HOST</span>`;
+      }
+
       card.innerHTML = `
         <div class="avatar">${p.avatar}</div>
-        <div class="name">${p.name}</div>
+        <div class="name" style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%;">${nameHtml}</div>
       `;
       lobbyPlayersGrid.appendChild(card);
     });
@@ -424,6 +466,12 @@ document.addEventListener('DOMContentLoaded', () => {
         bubbleHtml = `<div class="speech-bubble active ${activeMsg.isEmoji ? 'is-emoji' : ''}">${activeMsg.message}</div>`;
       }
 
+      let nameHtml = p.name;
+      if (p.name.endsWith(' (Host)')) {
+        const baseName = p.name.substring(0, p.name.length - 7);
+        nameHtml = `${baseName} <span class="host-badge-tag" style="background: var(--clr-red); color: white; border-radius: 3px; padding: 1px 3px; font-size: 0.6rem; font-weight: bold; vertical-align: middle; border: 1px solid rgba(255,255,255,0.15);">HOST</span>`;
+      }
+
       playerDiv.innerHTML = `
         ${wonOverlay}
         ${bubbleHtml}
@@ -431,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ${p.avatar}
           ${cardBadgeHtml}
         </div>
-        <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}">${p.name}</div>
+        <div class="name" style="${p.hasWon ? 'color: var(--clr-yellow); font-weight: 700;' : ''}; display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; white-space: nowrap;">${nameHtml}</div>
         ${unoBadge}
       `;
 
